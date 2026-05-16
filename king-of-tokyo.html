@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>King of Tokyo</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c26;--surface3:#252533;
+  --border:#2a2a3a;--border2:#3a3a50;--text:#f0f0f8;--muted:#8888aa;
+  --accent:#e8c547;--accent2:#c9a830;--green:#2dce89;--red:#f5365c;
+  --purple:#7f77dd;--teal:#1d9e75;
+  --font-display:'Bebas Neue',sans-serif;--font-body:'DM Sans',sans-serif;
+  --radius:10px;--radius-lg:16px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;overflow-x:hidden}
+.screen{display:none;min-height:100vh;flex-direction:column}
+.screen.active{display:flex}
+.btn{cursor:pointer;border:1px solid var(--border2);background:var(--surface2);color:var(--text);padding:10px 18px;border-radius:var(--radius);font-family:var(--font-body);font-size:14px;font-weight:500;transition:all .15s;line-height:1;touch-action:manipulation}
+.btn:active{transform:scale(.96)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-accent{background:var(--accent);color:#111;border-color:var(--accent2);font-weight:600}
+.btn-accent:hover{background:var(--accent2)}
+.btn-ghost{background:transparent;border-color:var(--border)}
+.btn-red{background:rgba(245,54,92,.15);border-color:var(--red);color:var(--red)}
+.btn-green{background:rgba(45,206,137,.15);border-color:var(--green);color:var(--green)}
+.btn-sm{padding:7px 12px;font-size:12px}
+.btn-full{width:100%}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px}
+.lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.row{display:flex;align-items:center;gap:8px}
+.spacer{flex:1}
+.badge{display:inline-block;padding:3px 9px;border-radius:9999px;font-size:11px;font-weight:600}
+.badge-keep{background:rgba(29,158,117,.2);color:var(--teal);border:1px solid rgba(29,158,117,.3)}
+.badge-discard{background:rgba(245,54,92,.15);color:#f9a;border:1px solid rgba(245,54,92,.2)}
+.badge-evol{background:rgba(127,119,221,.2);color:var(--purple);border:1px solid rgba(127,119,221,.3)}
+input[type=text],select{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--font-body);font-size:14px;padding:10px 12px;width:100%;outline:none}
+input[type=text]:focus,select:focus{border-color:var(--accent)}
+select option{background:var(--surface2)}
+.hidden{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+
+/* LOADING */
+#screen-loading{justify-content:center;align-items:center;gap:16px;background:var(--bg)}
+.spinner{width:40px;height:40px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* LOBBY */
+#screen-lobby{padding:24px;justify-content:center;background:radial-gradient(ellipse at top,#1a1a2e 0%,var(--bg) 60%)}
+.lobby-wrap{max-width:420px;width:100%;margin:auto;padding-top:32px}
+.lobby-title{font-family:var(--font-display);font-size:60px;color:var(--accent);letter-spacing:3px;text-align:center;line-height:1}
+.lobby-sub{text-align:center;color:var(--muted);font-size:13px;margin-top:4px;margin-bottom:28px}
+.room-code-display{font-family:var(--font-display);font-size:72px;letter-spacing:12px;color:var(--accent);text-align:center;padding:20px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);margin:12px 0}
+.player-lobby-row{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:6px;animation:slideIn .2s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+
+/* HOST SETUP */
+#screen-host-setup{padding:20px;gap:14px;overflow-y:auto}
+.setup-header{font-family:var(--font-display);font-size:36px;color:var(--accent);letter-spacing:2px}
+.monster-name-row{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px}
+
+/* TABS */
+.tab-bar{display:flex;gap:2px;background:var(--surface2);border-radius:var(--radius);padding:3px}
+.tab{flex:1;text-align:center;padding:8px 4px;border-radius:8px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border:none;background:transparent;font-family:var(--font-body);transition:all .15s;touch-action:manipulation}
+.tab.active{background:var(--surface3);color:var(--text)}
+.panel{display:none}.panel.active{display:block}
+
+/* PLAYER PHONE */
+#screen-player{padding:0;overflow-y:auto}
+.player-header{padding:14px 18px 10px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.ph-name{font-family:var(--font-display);font-size:26px;color:var(--accent);letter-spacing:1px}
+.ph-status{font-size:12px;color:var(--muted);margin-top:2px}
+.player-content{padding:14px;display:flex;flex-direction:column;gap:10px;padding-bottom:32px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+.stat-label{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:6px}
+.stat-controls{display:flex;align-items:center;gap:10px}
+.stat-btn{width:48px;height:48px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;transition:all .1s;font-family:var(--font-body)}
+.stat-btn:active{transform:scale(.9)}
+.stat-btn.minus{border-color:var(--red);color:var(--red)}
+.stat-btn.plus{border-color:var(--green);color:var(--green)}
+.stat-val{font-family:var(--font-display);font-size:44px;flex:1;text-align:center}
+.tokyo-bar{background:rgba(29,158,117,.12);border:1px solid var(--teal);border-radius:var(--radius-lg);padding:12px 14px;display:flex;align-items:center;gap:10px}
+.dice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0}
+.die{aspect-ratio:1;border-radius:var(--radius-lg);border:2px solid var(--border2);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer;transition:all .15s;touch-action:manipulation;user-select:none}
+.die:active{transform:scale(.9)}
+.die.locked{border-color:var(--accent);background:rgba(232,197,71,.1)}
+.die.blank{color:var(--muted);font-size:18px}
+.roll-result-box{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:12px;margin-top:8px}
+.roll-line{font-size:13px;padding:2px 0;line-height:1.6}
+.rl-hit{color:#f09595}.rl-heal{color:var(--teal)}.rl-en{color:var(--accent)}.rl-vp{color:var(--purple)}.rl-dim{color:var(--muted)}
+.p-card-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:flex;align-items:flex-start;gap:8px}
+.remove-card-btn{color:var(--red);font-size:18px;cursor:pointer;padding:0 4px;background:none;border:none;line-height:1;flex-shrink:0;font-family:var(--font-body)}
+
+/* HOST CTRL */
+#screen-host-ctrl{padding:0;overflow-y:auto}
+.host-header{padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px}
+.host-title{font-family:var(--font-display);font-size:22px;color:var(--accent);letter-spacing:1px}
+.host-content{padding:12px;padding-bottom:40px}
+.pcr{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;margin-bottom:8px}
+.pcr.in-tokyo{border-color:var(--teal);background:rgba(29,158,117,.06)}
+.pcr.eliminated{opacity:.35}
+.pcr-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.pcr-name{font-weight:600;font-size:14px}
+.pcr-tokyo-badge{font-size:10px;background:rgba(29,158,117,.2);color:var(--teal);padding:2px 8px;border-radius:9999px;font-weight:600}
+.pcr-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.pcr-stat{background:var(--surface2);border-radius:var(--radius);padding:8px;text-align:center}
+.pcr-stat-lbl{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.pcr-stat-val{font-family:var(--font-display);font-size:26px;line-height:1.2;margin:2px 0}
+.pcr-stat-val.hp{color:#f09595}.pcr-stat-val.vp{color:var(--purple)}.pcr-stat-val.en{color:var(--accent)}
+.pcr-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.market-slot{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;margin-bottom:8px}
+.cdi{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:6px}
+
+/* DISPLAY */
+#screen-display{background:#080810;padding:18px;gap:14px;overflow-y:auto}
+.disp-title{font-family:var(--font-display);font-size:48px;color:var(--accent);letter-spacing:3px}
+.disp-round{font-size:14px;color:var(--muted)}
+.tokyo-zone{background:rgba(29,158,117,.07);border:1px solid rgba(29,158,117,.25);border-radius:var(--radius-lg);padding:14px}
+.tokyo-zone-title{font-family:var(--font-display);font-size:16px;color:var(--teal);letter-spacing:2px;margin-bottom:10px}
+.tokyo-slots{display:flex;gap:10px}
+.tokyo-slot{flex:1;background:rgba(0,0,0,.3);border:1px dashed rgba(29,158,117,.35);border-radius:var(--radius);padding:14px;text-align:center;min-height:90px;display:flex;align-items:center;justify-content:center}
+.tokyo-slot.occupied{border-style:solid;border-color:var(--teal)}
+.dp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.dp-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:12px}
+.dp-card.eliminated{opacity:.25}
+.dp-icon{font-size:34px;margin-bottom:4px}
+.dp-name{font-family:var(--font-display);font-size:18px;color:#fff;letter-spacing:1px}
+.dp-stats{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.dp-stat{background:var(--surface2);border-radius:6px;padding:3px 9px;font-size:12px;font-weight:600}
+.dp-stat.hp{color:#f09595}.dp-stat.vp{color:var(--purple)}.dp-stat.en{color:var(--accent)}
+.dp-chips{margin-top:6px;display:flex;flex-wrap:wrap;gap:3px}
+.dp-chip{font-size:10px;background:rgba(127,119,221,.12);color:var(--purple);border:1px solid rgba(127,119,221,.2);padding:2px 6px;border-radius:9999px}
+.disp-section{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:12px}
+.disp-section-title{font-family:var(--font-display);font-size:14px;color:var(--muted);letter-spacing:2px;margin-bottom:10px}
+.disp-die{width:52px;height:52px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:26px}
+.disp-die.locked{border-color:var(--accent);background:rgba(232,197,71,.1)}
+.disp-result{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.disp-result span{padding:3px 10px;border-radius:9999px;font-size:13px;font-weight:500}
+.disp-store-cards{display:flex;gap:8px;flex-wrap:wrap}
+.dsc{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:10px;flex:1;min-width:130px}
+.dsc-name{font-size:14px;font-weight:600;color:#fff}
+.dsc-cost{font-size:11px;color:var(--accent);margin-top:2px}
+.dsc-text{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.4}
+
+/* WIN */
+.win-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:1000}
+.win-box{background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius-lg);padding:36px;text-align:center;max-width:300px}
+.win-icon{font-size:64px;margin-bottom:12px}
+.win-title{font-family:var(--font-display);font-size:44px;color:var(--accent);letter-spacing:2px}
+.win-name{font-size:18px;font-weight:500;margin-top:6px}
+.win-reason{font-size:13px;color:var(--muted);margin-top:4px}
+
+.fullscreen-btn{position:fixed;bottom:16px;right:16px;z-index:100;width:40px;height:40px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+</style>
+</head>
+<body>
+
+<div id="screen-loading" class="screen active">
+  <div style="font-family:var(--font-display);font-size:48px;color:var(--accent);letter-spacing:2px">KING OF TOKYO</div>
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--muted)">Connecting...</div>
+</div>
+
+<div id="screen-lobby" class="screen">
+  <div class="lobby-wrap">
+    <div class="lobby-title">KING<br>OF TOKYO</div>
+    <div class="lobby-sub">Companion App</div>
+
+    <div id="lobby-home" style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn btn-accent" style="padding:14px;font-size:16px" onclick="goHostSetup()">Host a game</button>
+      <div style="text-align:center;color:var(--muted);font-size:12px;padding:4px 0">— or join with a code —</div>
+      <div class="card" style="display:flex;flex-direction:column;gap:8px">
+        <div class="lbl">Room code</div>
+        <div class="row">
+          <input type="text" id="join-code-input" placeholder="ABCD" maxlength="4" style="font-family:var(--font-display);font-size:26px;letter-spacing:6px;text-align:center;text-transform:uppercase">
+          <button class="btn btn-accent" onclick="joinGame()">Join</button>
+        </div>
+        <div id="join-error" class="hidden" style="color:var(--red);font-size:12px"></div>
+      </div>
+      <button class="btn btn-ghost" onclick="showDisplayMode()">Display view (TV / monitor)</button>
+    </div>
+
+    <div id="lobby-waiting" class="hidden" style="display:flex;flex-direction:column;gap:10px">
+      <div class="lbl" style="text-align:center">Share this code</div>
+      <div class="room-code-display" id="room-code-show">????</div>
+      <div style="text-align:center;font-size:13px;color:var(--muted)">Players open the app and enter this code</div>
+      <div class="lbl" style="margin-top:8px">Players joined</div>
+      <div id="lobby-player-list"></div>
+      <div class="row" style="gap:8px">
+        <button class="btn btn-ghost" onclick="backToLobby()">Cancel</button>
+        <button class="btn btn-accent btn-full" id="start-game-btn" onclick="startGame()" disabled>Start game</button>
+      </div>
+    </div>
+
+    <div id="lobby-join-form" class="hidden" style="display:flex;flex-direction:column;gap:10px">
+      <div class="card" style="display:flex;flex-direction:column;gap:10px">
+        <div class="lbl">Your name</div>
+        <input type="text" id="player-name-input" placeholder="Enter your name" maxlength="16">
+        <div class="row">
+          <button class="btn btn-ghost" onclick="backToLobby()">Back</button>
+          <button class="btn btn-accent btn-full" onclick="confirmJoin()">Join game</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-host-setup" class="screen">
+  <div style="max-width:480px;width:100%;margin:auto;padding:20px;display:flex;flex-direction:column;gap:14px">
+    <div class="row">
+      <div class="setup-header">SETUP</div>
+      <div class="spacer"></div>
+      <button class="btn btn-accent btn-sm" onclick="openLobbyWaiting()">Open lobby →</button>
+    </div>
+    <div class="card">
+      <div class="lbl">Edition</div>
+      <div class="row" style="flex-wrap:wrap;gap:6px">
+        <button class="btn btn-sm btn-accent edition-btn" data-e="base" onclick="setEdition('base')">Base game</button>
+        <button class="btn btn-sm edition-btn" data-e="powerup" onclick="setEdition('powerup')">+ Power Up</button>
+        <button class="btn btn-sm edition-btn" data-e="newyork" onclick="setEdition('newyork')">New York</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="lbl">Tokyo slots</div>
+      <div class="row" style="gap:6px;flex-wrap:wrap">
+        <button class="btn btn-sm btn-accent tokyo-slots-btn" data-s="1" onclick="setTokyoSlots(1)">1 slot (2–4 players)</button>
+        <button class="btn btn-sm tokyo-slots-btn" data-s="2" onclick="setTokyoSlots(2)">2 slots (5–6 players)</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="lbl">Monster names (edit if you want custom names)</div>
+      <div id="monster-assign-list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-player" class="screen">
+  <div class="player-header">
+    <div class="row">
+      <div>
+        <div class="ph-name" id="ph-name">Loading...</div>
+        <div class="ph-status" id="ph-status">Connecting...</div>
+      </div>
+      <div class="spacer"></div>
+      <div style="font-size:30px" id="ph-icon">?</div>
+    </div>
+  </div>
+  <div class="player-content">
+    <div id="ph-tokyo-bar" class="tokyo-bar hidden">
+      <div style="font-size:24px">🏙️</div>
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--teal)">IN TOKYO</div>
+        <div style="font-size:12px;color:rgba(29,158,117,.7);margin-top:2px">You can't heal — attack hits ALL outside</div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchTab(this,'ph-stats')">Stats</button>
+      <button class="tab" onclick="switchTab(this,'ph-dice')">Dice</button>
+      <button class="tab" onclick="switchTab(this,'ph-mycards')">My cards</button>
+    </div>
+    <div id="ph-stats" class="panel active">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="stat-card">
+          <div class="stat-label">❤️ Hit Points</div>
+          <div class="stat-controls">
+            <button class="stat-btn minus" onclick="adjustMyStat('hp',-1)">−</button>
+            <div class="stat-val" id="ph-hp-val" style="color:#f09595">10</div>
+            <button class="stat-btn plus" onclick="adjustMyStat('hp',1)">+</button>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">★ Victory Points</div>
+          <div class="stat-controls">
+            <button class="stat-btn minus" onclick="adjustMyStat('vp',-1)">−</button>
+            <div class="stat-val" id="ph-vp-val" style="color:var(--purple)">0</div>
+            <button class="stat-btn plus" onclick="adjustMyStat('vp',1)">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="stat-card" style="margin-bottom:10px">
+        <div class="stat-label">⚡ Energy</div>
+        <div class="stat-controls">
+          <button class="stat-btn minus" onclick="adjustMyStat('energy',-1)">−</button>
+          <div class="stat-val" id="ph-en-val" style="color:var(--accent)">0</div>
+          <button class="stat-btn plus" onclick="adjustMyStat('energy',1)">+</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="lbl">Tokyo</div>
+        <div id="ph-tokyo-controls"></div>
+      </div>
+    </div>
+    <div id="ph-dice" class="panel">
+      <div class="card">
+        <div class="lbl">Your dice — <span id="ph-rolls-left">3</span> rolls left this turn</div>
+        <div class="dice-grid" id="ph-dice-grid"></div>
+        <button class="btn btn-accent btn-full" id="ph-roll-btn" onclick="playerRoll()" style="margin-bottom:6px">Roll dice</button>
+        <button class="btn btn-ghost btn-full btn-sm" onclick="playerResetDice()">Reset (new turn)</button>
+      </div>
+      <div id="ph-roll-result" class="roll-result-box hidden"></div>
+      <div class="card" style="margin-top:10px">
+        <div class="lbl">Die faces</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:12px">
+          <div style="padding:6px;background:var(--surface2);border-radius:var(--radius);text-align:center"><div style="font-size:18px">⚡</div><div style="color:var(--muted);margin-top:2px">Energy +1</div></div>
+          <div style="padding:6px;background:var(--surface2);border-radius:var(--radius);text-align:center"><div style="font-size:18px">❤️</div><div style="color:var(--muted);margin-top:2px">Heal +1 HP</div></div>
+          <div style="padding:6px;background:var(--surface2);border-radius:var(--radius);text-align:center"><div style="font-size:18px">⚔️</div><div style="color:var(--muted);margin-top:2px">Attack ×</div></div>
+          <div style="padding:6px;background:var(--surface2);border-radius:var(--radius);text-align:center"><div style="font-size:18px">1️⃣</div><div style="color:var(--muted);margin-top:2px">VP (3+)</div></div>
+          <div style="padding:6px;background:var(--surface2);border-radius:var(--radius);text-align:center"><div style="font-size:18px">2️⃣</div><div style="color:var(--muted);margin-top:2px">VP (3+)</div></div>
+          <div style="padding:6px;background:var(--surface2);border-radius:var(--radius);text-align:center"><div style="font-size:18px">3️⃣</div><div style="color:var(--muted);margin-top:2px">VP (3+)</div></div>
+        </div>
+      </div>
+    </div>
+    <div id="ph-mycards" class="panel">
+      <div class="lbl">Your keep cards</div>
+      <div id="ph-cards-list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-host-ctrl" class="screen">
+  <div class="host-header">
+    <div class="host-title">KOT CONTROL</div>
+    <div style="font-size:12px;color:var(--muted)">Round <span id="ctrl-round">1</span></div>
+    <div class="spacer"></div>
+    <button class="btn btn-sm btn-ghost" onclick="hostEndRound()">+Round</button>
+    <button class="btn btn-sm btn-accent" onclick="switchToDisplay()">Display →</button>
+  </div>
+  <div class="host-content">
+    <div class="tab-bar" style="margin-bottom:12px">
+      <button class="tab active" onclick="switchTab(this,'ctrl-players')">Players</button>
+      <button class="tab" onclick="switchTab(this,'ctrl-market')">Market</button>
+      <button class="tab" onclick="switchTab(this,'ctrl-dice')">Dice</button>
+      <button class="tab" onclick="switchTab(this,'ctrl-cards')">Card DB</button>
+    </div>
+    <div id="ctrl-players" class="panel active"><div id="host-players-list"></div></div>
+    <div id="ctrl-market" class="panel">
+      <div class="row" style="margin-bottom:10px">
+        <div class="lbl" style="margin:0">Store (3 face-up)</div>
+        <div class="spacer"></div>
+        <button class="btn btn-sm btn-ghost" onclick="sweepMarket()">Sweep all (2⚡)</button>
+      </div>
+      <div id="host-market-slots"></div>
+      <div id="host-evol-section" class="hidden">
+        <div style="height:1px;background:var(--border);margin:12px 0"></div>
+        <div class="row" style="margin-bottom:8px">
+          <div class="lbl" style="margin:0">Evolution cards</div>
+          <div class="spacer"></div>
+          <select id="evol-draw-target" style="width:auto;font-size:12px;padding:6px 8px"></select>
+          <button class="btn btn-sm btn-ghost" onclick="drawEvolution()">Draw</button>
+        </div>
+        <div id="host-evol-list"></div>
+      </div>
+    </div>
+    <div id="ctrl-dice" class="panel">
+      <div class="card" style="margin-bottom:10px">
+        <div class="lbl">Dice roller</div>
+        <select id="ctrl-dice-player" style="margin-bottom:10px" onchange="renderCtrlDiceFaces()"></select>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="ctrl-dice-row"></div>
+        <div class="row" style="flex-wrap:wrap;gap:6px">
+          <button class="btn btn-sm btn-accent" onclick="hostRoll()">Roll</button>
+          <span style="font-size:12px;color:var(--muted)" id="ctrl-roll-lbl">Roll 1 of 3</span>
+          <div class="spacer"></div>
+          <button class="btn btn-sm btn-ghost" onclick="hostResetDice()">Reset</button>
+        </div>
+      </div>
+      <div id="ctrl-roll-result" class="roll-result-box hidden"></div>
+    </div>
+    <div id="ctrl-cards" class="panel">
+      <input type="text" id="ctrl-card-search" placeholder="Search cards..." style="margin-bottom:8px" oninput="renderCardDB()">
+      <div class="row" style="flex-wrap:wrap;gap:4px;margin-bottom:10px">
+        <button class="btn btn-sm filter-btn btn-accent" data-f="all" onclick="setFilter(this)">All</button>
+        <button class="btn btn-sm filter-btn" data-f="keep" onclick="setFilter(this)">Keep</button>
+        <button class="btn btn-sm filter-btn" data-f="discard" onclick="setFilter(this)">Discard</button>
+        <button class="btn btn-sm filter-btn" data-f="evol" onclick="setFilter(this)">Evolution</button>
+      </div>
+      <div id="ctrl-card-list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-display" class="screen">
+  <div class="row" style="margin-bottom:4px">
+    <div class="disp-title">KING OF TOKYO</div>
+    <div class="spacer"></div>
+    <div class="disp-round">ROUND <span id="disp-round-num">1</span></div>
+  </div>
+  <div class="tokyo-zone">
+    <div class="tokyo-zone-title">TOKYO</div>
+    <div id="disp-tokyo-slots" class="tokyo-slots"></div>
+  </div>
+  <div id="disp-players-grid" class="dp-grid"></div>
+  <div id="disp-dice-section" class="disp-section hidden">
+    <div class="disp-section-title">DICE — <span id="disp-dice-who"></span></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap" id="disp-dice-row"></div>
+    <div class="disp-result" id="disp-dice-result"></div>
+  </div>
+  <div class="disp-section">
+    <div class="disp-section-title">STORE</div>
+    <div id="disp-store-cards" class="disp-store-cards"></div>
+  </div>
+  <button class="fullscreen-btn" onclick="toggleFullscreen()">⛶</button>
+</div>
+
+<div id="win-overlay" class="win-overlay hidden">
+  <div class="win-box">
+    <div class="win-icon" id="win-icon">🏆</div>
+    <div class="win-title">WINNER!</div>
+    <div class="win-name" id="win-name"></div>
+    <div class="win-reason" id="win-reason"></div>
+    <button class="btn btn-accent btn-full" style="margin-top:18px" onclick="document.getElementById('win-overlay').classList.add('hidden')">Continue</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getDatabase, ref, set, get, update, onValue, off } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA0rBJosa9xjfS_2PHoGJrJFkPTYCYlEk4",
+  authDomain: "king-of-tokyo---viz.firebaseapp.com",
+  databaseURL: "https://king-of-tokyo---viz-default-rtdb.firebaseio.com",
+  projectId: "king-of-tokyo---viz",
+  storageBucket: "king-of-tokyo---viz.firebasestorage.app",
+  messagingSenderId: "484585770153",
+  appId: "1:484585770153:web:4e5cecf2feaf1f4452edb8"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getDatabase(fbApp);
+
+const MONSTERS = [
+  {id:'giga',name:'Gigazaur',icon:'🦖'},{id:'kraken',name:'The Kraken',icon:'🐙'},
+  {id:'cyber',name:'Cyber Kitty',icon:'🐱'},{id:'meka',name:'Meka Dragon',icon:'🐉'},
+  {id:'kong',name:'Kong',icon:'🦍'},{id:'alien',name:'Alienoid',icon:'👾'},
+  {id:'boogey',name:'Boogie Woogie',icon:'👻'},{id:'rob',name:'Rob',icon:'🤖'},
+  {id:'penguin',name:'Space Penguin',icon:'🐧'},{id:'rex',name:'Cyber Rex',icon:'🦕'},
+];
+
+const CARDS_DB = [
+  {id:'c01',name:'Acid Attack',cost:7,type:'keep',text:'When you deal damage, deal 1 extra damage.',edition:'base'},
+  {id:'c02',name:'Alpha Monster',cost:5,type:'keep',text:'+1 VP at start of each turn in Tokyo.',edition:'base'},
+  {id:'c03',name:'Apartment Building',cost:5,type:'discard',text:'Gain 3 VP.',edition:'base'},
+  {id:'c04',name:'Armageddon',cost:9,type:'discard',text:'All monsters take 3 damage.',edition:'base'},
+  {id:'c05',name:'Background Dweller',cost:4,type:'keep',text:'+1 VP each turn outside Tokyo while a monster is inside.',edition:'base'},
+  {id:'c06',name:'Burrowing',cost:3,type:'keep',text:'Reduce damage taken outside Tokyo by 1 (min 1).',edition:'base'},
+  {id:'c07',name:'Camouflage',cost:4,type:'keep',text:'When you take damage, roll 1 die. On Claw, cancel it.',edition:'base'},
+  {id:'c08',name:'Complete Destruction',cost:9,type:'discard',text:'Deal 3 damage to all other monsters.',edition:'base'},
+  {id:'c09',name:'Contentment',cost:3,type:'keep',text:'+1 VP per turn while in Tokyo.',edition:'base'},
+  {id:'c10',name:'Corner Store',cost:3,type:'discard',text:'Gain 2 Energy.',edition:'base'},
+  {id:'c11',name:'Cyber Bunny',cost:5,type:'keep',text:'Spend 1 Energy to re-roll all dice once per turn.',edition:'base'},
+  {id:'c12',name:'Death From Above',cost:5,type:'keep',text:'+2 VP when you enter Tokyo.',edition:'base'},
+  {id:'c13',name:'Even Bigger',cost:4,type:'keep',text:'+1 max HP and heal 1 HP.',edition:'base'},
+  {id:'c14',name:'Feline Agility',cost:3,type:'keep',text:'Leave Tokyo without damage when attacked.',edition:'base'},
+  {id:'c15',name:'Fire Breathing',cost:5,type:'keep',text:'In Tokyo, also deal 1 damage to outside monsters.',edition:'base'},
+  {id:'c16',name:'Fire Blast',cost:3,type:'discard',text:'Deal 4 damage to one monster.',edition:'base'},
+  {id:'c17',name:'Freeze Ray',cost:4,type:'keep',text:'Target loses 1 turn after taking damage from you.',edition:'base'},
+  {id:'c18',name:'Fuel Tank',cost:3,type:'discard',text:'Gain 3 Energy.',edition:'base'},
+  {id:'c19',name:'Giant Brain',cost:7,type:'keep',text:'When you buy a card, draw an extra one and keep it.',edition:'base'},
+  {id:'c20',name:'Herbivore',cost:3,type:'keep',text:'Gain 1 Energy each turn you don\'t deal damage.',edition:'base'},
+  {id:'c21',name:'It Has A Child',cost:4,type:'discard',text:'Gain 4 VP.',edition:'base'},
+  {id:'c22',name:'Jet Fighters',cost:4,type:'discard',text:'Deal 4 damage to the monster in Tokyo.',edition:'base'},
+  {id:'c23',name:'Lightning Armor',cost:5,type:'keep',text:'Return 1 damage to attacker each hit.',edition:'base'},
+  {id:'c24',name:'Medic',cost:3,type:'keep',text:'Heal 1 extra HP per Heart rolled.',edition:'base'},
+  {id:'c25',name:'Monster Buffet',cost:4,type:'discard',text:'Gain 1 VP + 1 HP per monster in the game.',edition:'base'},
+  {id:'c26',name:'Monster Energy Drink',cost:3,type:'discard',text:'Gain 2 Energy and 2 HP.',edition:'base'},
+  {id:'c27',name:'Nova Breath',cost:6,type:'discard',text:'Deal 2 damage to all other monsters.',edition:'base'},
+  {id:'c28',name:'Opportunist',cost:3,type:'keep',text:'When a card is swept, buy it first for 1 less Energy.',edition:'base'},
+  {id:'c29',name:'Poison Quills',cost:5,type:'keep',text:'Targets you damage lose 1 extra HP next turn.',edition:'base'},
+  {id:'c30',name:'Psychic Probe',cost:4,type:'keep',text:'Re-roll one of an opponent\'s dice.',edition:'base'},
+  {id:'c31',name:'Rapid Healing',cost:3,type:'keep',text:'Spend 2 Energy to gain 1 HP (once per turn).',edition:'base'},
+  {id:'c32',name:'Regeneration',cost:4,type:'keep',text:'At start of turn, roll 1 die. On Heart, gain 2 HP.',edition:'base'},
+  {id:'c33',name:'Shrink Ray',cost:4,type:'keep',text:'Targets you damage roll 1 fewer die (max −3).',edition:'base'},
+  {id:'c34',name:'Spiky Shell',cost:5,type:'keep',text:'When you take 1+ damage, deal 1 back to attacker.',edition:'base'},
+  {id:'c35',name:'Stretchy',cost:3,type:'keep',text:'Deal 1 damage to Tokyo monster even from outside.',edition:'base'},
+  {id:'c36',name:'Tail Swipe',cost:5,type:'keep',text:'When entering Tokyo, deal 2 damage to the leaving monster.',edition:'base'},
+  {id:'c37',name:'Tanks',cost:5,type:'discard',text:'Deal 8 damage to monster in Tokyo.',edition:'base'},
+  {id:'c38',name:'Venomous',cost:3,type:'keep',text:'Targets you damage take 1 extra damage/turn until healed.',edition:'base'},
+  {id:'c39',name:'Wings',cost:6,type:'keep',text:'Don\'t take damage entering or leaving Tokyo Bay.',edition:'base'},
+  {id:'c40',name:'Mimic',cost:5,type:'keep',text:'Copy the effect of any one Keep card in play.',edition:'base'},
+  {id:'c41',name:'Rooting in the Moment',cost:4,type:'keep',text:'Double Hearts rolled while in Tokyo.',edition:'base'},
+  {id:'c42',name:'Dedication',cost:3,type:'keep',text:'+1 extra die while in Tokyo.',edition:'base'},
+  {id:'c43',name:'Urbavore',cost:5,type:'keep',text:'+1 VP and +1 Energy per building destroyed.',edition:'newyork'},
+  {id:'c44',name:'Military Might',cost:4,type:'keep',text:'Roll 1 extra die when attacking.',edition:'newyork'},
+  {id:'c45',name:'All Systems Go',cost:3,type:'discard',text:'Take another full turn immediately.',edition:'newyork'},
+  {id:'c46',name:'Skyscraper',cost:3,type:'discard',text:'Gain 2 VP and 2 Energy.',edition:'newyork'},
+  {id:'e01',name:'Alpha Evolution',cost:0,type:'evol',text:'When entering Tokyo, gain 2 VP.',edition:'powerup'},
+  {id:'e02',name:'Baby Fangs',cost:0,type:'evol',text:'Deal 1 extra damage on first attack each turn.',edition:'powerup'},
+  {id:'e03',name:'Bio-Mastery',cost:0,type:'evol',text:'Gain 2 HP when buying a Keep card.',edition:'powerup'},
+  {id:'e04',name:'Call for Help',cost:0,type:'evol',text:'Once per game: all your attacks deal double damage.',edition:'powerup'},
+  {id:'e05',name:'Deja-vu',cost:0,type:'evol',text:'Once per game: re-roll all dice after final roll.',edition:'powerup'},
+  {id:'e06',name:'Extra Head',cost:0,type:'evol',text:'Roll 1 extra die this turn.',edition:'powerup'},
+  {id:'e07',name:'High Voltage',cost:0,type:'evol',text:'Gain 2 extra Energy this turn.',edition:'powerup'},
+  {id:'e08',name:'Hibernation',cost:0,type:'evol',text:'Skip your next turn to heal to full HP.',edition:'powerup'},
+  {id:'e09',name:'Irradiated',cost:0,type:'evol',text:'All Claws rolled deal +1 damage this turn.',edition:'powerup'},
+  {id:'e10',name:'Metamorph',cost:0,type:'evol',text:'Discard 1 Keep card, gain its cost in Energy.',edition:'powerup'},
+  {id:'e11',name:'Rapid Evolution',cost:0,type:'evol',text:'Draw 2 more Evolution cards.',edition:'powerup'},
+  {id:'e12',name:'Sonar',cost:0,type:'evol',text:'Look at and reorder the top 3 cards of any deck.',edition:'powerup'},
+];
+
+const DIE_FACES = ['⚡','❤️','⚔️','1️⃣','2️⃣','3️⃣'];
+
+const shuffle = a => {for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const randCode = () => Math.random().toString(36).slice(2,6).toUpperCase();
+const cardById = id => CARDS_DB.find(c=>c.id===id);
+
+const G = {
+  role: null, roomCode: null, myPlayerId: null, gameState: null,
+  edition: 'base', tokyoSlots: 1, listeners: [], cardFilter: 'all',
+};
+window.G = G;
+
+// ─── SCREENS ───
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ─── LOBBY ───
+window.backToLobby = () => {
+  G.listeners.forEach(({r}) => off(r));
+  G.listeners = [];
+  Object.assign(G, {role:null,roomCode:null,myPlayerId:null,gameState:null});
+  ['lobby-home','lobby-waiting','lobby-join-form'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) { el.style.display = ''; el.classList.remove('hidden'); }
+  });
+  document.getElementById('lobby-waiting').classList.add('hidden');
+  document.getElementById('lobby-join-form').classList.add('hidden');
+  showScreen('screen-lobby');
+};
+
+window.goHostSetup = () => {
+  G.role = 'host'; G.edition = 'base'; G.tokyoSlots = 1;
+  renderMonsterAssignList();
+  showScreen('screen-host-setup');
+};
+
+window.setEdition = e => {
+  G.edition = e;
+  document.querySelectorAll('.edition-btn').forEach(b => b.classList.toggle('btn-accent', b.dataset.e===e));
+};
+
+window.setTokyoSlots = n => {
+  G.tokyoSlots = n;
+  document.querySelectorAll('.tokyo-slots-btn').forEach(b => b.classList.toggle('btn-accent', parseInt(b.dataset.s)===n));
+};
+
+function renderMonsterAssignList(){
+  const list = document.getElementById('monster-assign-list');
+  list.innerHTML = '';
+  MONSTERS.slice(0,6).forEach(m => {
+    const row = document.createElement('div');
+    row.className = 'monster-name-row';
+    row.innerHTML = `<span style="font-size:22px">${m.icon}</span><input type="text" value="${m.name}" data-mid="${m.id}" class="mname-inp" style="flex:1;background:transparent;border:none;font-size:14px;font-weight:500;padding:0" placeholder="${m.name}">`;
+    list.appendChild(row);
+  });
+}
+
+function availableCards(){
+  const ed = G.gameState?.edition || G.edition;
+  if(ed==='powerup') return CARDS_DB.filter(c=>c.edition==='base'||c.edition==='powerup');
+  if(ed==='newyork') return CARDS_DB.filter(c=>c.edition==='base'||c.edition==='newyork');
+  return CARDS_DB.filter(c=>c.edition==='base');
+}
+
+window.openLobbyWaiting = async () => {
+  const code = randCode();
+  G.roomCode = code;
+  document.getElementById('room-code-show').textContent = code;
+
+  const names = {};
+  document.querySelectorAll('.mname-inp').forEach(inp => { names[inp.dataset.mid] = inp.value || MONSTERS.find(m=>m.id===inp.dataset.mid).name; });
+
+  const baseDeck = availableCards().filter(c=>c.type!=='evol');
+  const deck = shuffle([...baseDeck]);
+  const market = [deck.pop(), deck.pop(), deck.pop()].filter(Boolean);
+  const evolDeck = G.edition==='powerup' ? shuffle(CARDS_DB.filter(c=>c.type==='evol').map(c=>({...c}))) : [];
+
+  await set(ref(db, `rooms/${code}`), {
+    round:1, phase:'waiting', edition:G.edition, tokyoSlots:G.tokyoSlots,
+    players:{}, monsterNames:names,
+    market: market.map(c=>c.id),
+    marketDeck: deck.map(c=>c.id),
+    evolDeck: evolDeck.map(c=>c.id),
+    dice: Array(6).fill(null).map(()=>({face:null,locked:false})),
+    rollsLeft:3, activeRollerName:'', activeRollerId:'', winner:null,
+  });
+
+  document.getElementById('lobby-home').classList.add('hidden');
+  document.getElementById('lobby-waiting').classList.remove('hidden');
+  showScreen('screen-lobby');
+  listenRoom(code);
+};
+
+function listenRoom(code){
+  const r = ref(db, `rooms/${code}`);
+  const unsub = onValue(r, snap => {
+    if(!snap.exists()) return;
+    G.gameState = snap.val();
+    if(G.role==='host'){
+      renderLobbyPlayerList();
+      const pc = Object.keys(G.gameState.players||{}).length;
+      document.getElementById('start-game-btn').disabled = pc < 1;
+      if(G.gameState.phase==='playing') { renderHostCtrl(); renderDisplay(); }
+    }
+    if(G.role==='player') renderPlayerView();
+    if(G.role==='display') renderDisplay();
+    if(G.gameState.winner) showWinner(G.gameState.winner);
+  });
+  G.listeners.push({r, unsub});
+}
+
+function renderLobbyPlayerList(){
+  const list = document.getElementById('lobby-player-list');
+  list.innerHTML = '';
+  const players = Object.values(G.gameState?.players||{});
+  if(!players.length){ list.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0">Waiting for players...</div>'; return; }
+  players.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'player-lobby-row';
+    row.innerHTML = `<span style="font-size:22px">${p.icon||'❓'}</span><span style="font-weight:500">${p.name}</span><span style="font-size:11px;color:var(--green);margin-left:auto">Joined</span>`;
+    list.appendChild(row);
+  });
+}
+
+window.startGame = async () => {
+  const players = Object.values(G.gameState?.players||{});
+  const monsterNames = G.gameState?.monsterNames||{};
+  const updates = {};
+  players.forEach((p,i) => {
+    const m = MONSTERS[i % MONSTERS.length];
+    updates[`rooms/${G.roomCode}/players/${p.id}/icon`] = m.icon;
+    updates[`rooms/${G.roomCode}/players/${p.id}/monsterId`] = m.id;
+    updates[`rooms/${G.roomCode}/players/${p.id}/monsterName`] = monsterNames[m.id]||m.name;
+    updates[`rooms/${G.roomCode}/players/${p.id}/hp`] = 10;
+    updates[`rooms/${G.roomCode}/players/${p.id}/maxHp`] = 10;
+    updates[`rooms/${G.roomCode}/players/${p.id}/vp`] = 0;
+    updates[`rooms/${G.roomCode}/players/${p.id}/energy`] = 0;
+    updates[`rooms/${G.roomCode}/players/${p.id}/tokyoSlot`] = i===0?1:0;
+    updates[`rooms/${G.roomCode}/players/${p.id}/eliminated`] = false;
+    updates[`rooms/${G.roomCode}/players/${p.id}/cards`] = [];
+    updates[`rooms/${G.roomCode}/players/${p.id}/evolCards`] = [];
+  });
+  updates[`rooms/${G.roomCode}/phase`] = 'playing';
+  await update(ref(db), updates);
+  showScreen('screen-host-ctrl');
+  renderHostCtrl();
+};
+
+// ─── JOIN ───
+window.joinGame = () => {
+  const code = (document.getElementById('join-code-input').value||'').toUpperCase().trim();
+  if(code.length!==4){ showJoinErr('Enter a 4-letter code'); return; }
+  get(ref(db,`rooms/${code}`)).then(snap => {
+    if(!snap.exists()){ showJoinErr('Room not found'); return; }
+    G.roomCode = code; G.gameState = snap.val();
+    document.getElementById('lobby-home').classList.add('hidden');
+    document.getElementById('lobby-join-form').classList.remove('hidden');
+  }).catch(()=>showJoinErr('Connection error'));
+};
+
+function showJoinErr(msg){ const el=document.getElementById('join-error'); el.textContent=msg; el.classList.remove('hidden'); }
+
+window.confirmJoin = async () => {
+  const name = (document.getElementById('player-name-input').value||'').trim();
+  if(!name) return;
+  G.role = 'player';
+  const pid = 'p_'+Math.random().toString(36).slice(2,8);
+  G.myPlayerId = pid;
+  await set(ref(db,`rooms/${G.roomCode}/players/${pid}`),{
+    id:pid, name, icon:'❓', hp:10, maxHp:10, vp:0, energy:0,
+    tokyoSlot:0, eliminated:false, cards:[], evolCards:[], monsterId:null, monsterName:name
+  });
+  showScreen('screen-player');
+  listenRoom(G.roomCode);
+};
+
+// ─── DISPLAY ───
+window.showDisplayMode = () => {
+  const code = prompt('Enter room code:');
+  if(!code) return;
+  G.roomCode = code.toUpperCase().trim();
+  G.role = 'display';
+  get(ref(db,`rooms/${G.roomCode}`)).then(snap => {
+    if(!snap.exists()){ alert('Room not found'); return; }
+    G.gameState = snap.val();
+    showScreen('screen-display');
+    renderDisplay();
+    listenRoom(G.roomCode);
+  });
+};
+
+window.switchToDisplay = () => { showScreen('screen-display'); renderDisplay(); };
+
+// ─── HOST CTRL ───
+function renderHostCtrl(){
+  if(!G.gameState) return;
+  document.getElementById('ctrl-round').textContent = G.gameState.round||1;
+  renderHostPlayers();
+  renderHostMarket();
+  renderCtrlDicePlayerSelect();
+  renderCtrlDiceFaces();
+  renderCardDB();
+  renderHostEvol();
+}
+
+window.hostEndRound = async () => {
+  await update(ref(db),{[`rooms/${G.roomCode}/round`]:(G.gameState?.round||1)+1});
+};
+
+function renderHostPlayers(){
+  const list = document.getElementById('host-players-list');
+  if(!list||!G.gameState) return;
+  const players = Object.values(G.gameState.players||{});
+  const ts = G.gameState.tokyoSlots||1;
+  list.innerHTML = '';
+  players.forEach(p => {
+    const inTokyo = p.tokyoSlot>0;
+    const div = document.createElement('div');
+    div.className = 'pcr'+(inTokyo?' in-tokyo':'')+(p.eliminated?' eliminated':'');
+    const cardNames = (p.cards||[]).map(cid=>{const c=cardById(cid);return c?c.name:'?';}).join(', ');
+    div.innerHTML = `
+      <div class="pcr-head">
+        <span style="font-size:20px">${p.icon||'❓'}</span>
+        <span class="pcr-name">${p.monsterName||p.name}</span>
+        ${inTokyo?`<span class="pcr-tokyo-badge">Tokyo${ts>1?' '+p.tokyoSlot:''}</span>`:''}
+        <div class="spacer"></div>
+        ${!p.eliminated?`<button class="btn btn-sm btn-red" onclick="hostEliminate('${p.id}')">Out</button>`:'<span style="font-size:11px;color:var(--muted)">Out</span>'}
+      </div>
+      <div class="pcr-stats">
+        <div class="pcr-stat"><div class="pcr-stat-lbl">HP</div><div class="pcr-stat-val hp">${p.hp}/${p.maxHp}</div><div class="row" style="justify-content:center;gap:6px;margin-top:4px"><button class="btn btn-sm" onclick="hostAdj('${p.id}','hp',-1)">−</button><button class="btn btn-sm" onclick="hostAdj('${p.id}','hp',1)">+</button></div></div>
+        <div class="pcr-stat"><div class="pcr-stat-lbl">VP</div><div class="pcr-stat-val vp">${p.vp}</div><div class="row" style="justify-content:center;gap:6px;margin-top:4px"><button class="btn btn-sm" onclick="hostAdj('${p.id}','vp',-1)">−</button><button class="btn btn-sm" onclick="hostAdj('${p.id}','vp',1)">+</button></div></div>
+        <div class="pcr-stat"><div class="pcr-stat-lbl">Energy</div><div class="pcr-stat-val en">${p.energy}</div><div class="row" style="justify-content:center;gap:6px;margin-top:4px"><button class="btn btn-sm" onclick="hostAdj('${p.id}','energy',-1)">−</button><button class="btn btn-sm" onclick="hostAdj('${p.id}','energy',1)">+</button></div></div>
+      </div>
+      <div class="pcr-actions">
+        ${ts===1
+          ?`<button class="btn btn-sm ${inTokyo?'btn-red':'btn-green'}" onclick="hostSetTokyo('${p.id}',${inTokyo?0:1})">${inTokyo?'Leave Tokyo':'Enter Tokyo'}</button>`
+          :`<button class="btn btn-sm ${p.tokyoSlot===1?'btn-red':'btn-green'}" onclick="hostSetTokyo('${p.id}',${p.tokyoSlot===1?0:1})">T1 ${p.tokyoSlot===1?'Leave':'Enter'}</button>
+            <button class="btn btn-sm ${p.tokyoSlot===2?'btn-red':'btn-green'}" onclick="hostSetTokyo('${p.id}',${p.tokyoSlot===2?0:2})">T2 ${p.tokyoSlot===2?'Leave':'Enter'}</button>`}
+      </div>
+      ${cardNames?`<div style="font-size:11px;color:var(--muted);margin-top:6px">Cards: ${cardNames}</div>`:''}
+    `;
+    list.appendChild(div);
+  });
+}
+
+window.hostAdj = async (pid,stat,delta) => {
+  const p = G.gameState?.players?.[pid]; if(!p) return;
+  let val = Math.max(0, (p[stat]||0)+delta);
+  if(stat==='hp') val = Math.min(p.maxHp||10, val);
+  const updates = {[`rooms/${G.roomCode}/players/${pid}/${stat}`]:val};
+  if(stat==='hp'&&val===0) updates[`rooms/${G.roomCode}/players/${pid}/eliminated`]=true;
+  if(stat==='vp'&&val>=20) updates[`rooms/${G.roomCode}/winner`]={name:p.monsterName||p.name,icon:p.icon,reason:'20 Victory Points!'};
+  await update(ref(db),updates);
+};
+
+window.hostSetTokyo = async (pid,slot) => {
+  const updates = {};
+  Object.keys(G.gameState?.players||{}).forEach(id => {
+    if(G.gameState.players[id].tokyoSlot===slot&&id!==pid) updates[`rooms/${G.roomCode}/players/${id}/tokyoSlot`]=0;
+  });
+  updates[`rooms/${G.roomCode}/players/${pid}/tokyoSlot`]=slot;
+  await update(ref(db),updates);
+};
+
+window.hostEliminate = async pid => {
+  const p = G.gameState?.players?.[pid];
+  const alive = Object.values(G.gameState?.players||{}).filter(x=>!x.eliminated&&x.id!==pid);
+  const updates = {
+    [`rooms/${G.roomCode}/players/${pid}/eliminated`]:true,
+    [`rooms/${G.roomCode}/players/${pid}/hp`]:0,
+    [`rooms/${G.roomCode}/players/${pid}/tokyoSlot`]:0,
+  };
+  if(alive.length===1) updates[`rooms/${G.roomCode}/winner`]={name:alive[0].monsterName||alive[0].name,icon:alive[0].icon,reason:'Last monster standing!'};
+  await update(ref(db),updates);
+};
+
+// ─── MARKET ───
+function renderHostMarket(){
+  const slots = document.getElementById('host-market-slots');
+  if(!slots||!G.gameState) return;
+  slots.innerHTML = '';
+  (G.gameState.market||[]).forEach((cid,i) => {
+    if(!cid) return;
+    const c = cardById(cid); if(!c) return;
+    const typeTag = c.type==='keep'?'<span class="badge badge-keep">Keep</span>':'<span class="badge badge-discard">Discard</span>';
+    const pOpts = Object.values(G.gameState.players||{}).filter(p=>!p.eliminated).map(p=>`<option value="${p.id}">${p.icon} ${p.monsterName||p.name}</option>`).join('');
+    const div = document.createElement('div');
+    div.className = 'market-slot';
+    div.innerHTML = `
+      <div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:4px">${typeTag}<span style="font-weight:600;font-size:14px">${c.name}</span><span style="font-size:12px;color:var(--accent)">⚡${c.cost}</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">${c.text}</div>
+      <div class="row" style="flex-wrap:wrap;gap:6px">
+        <select id="buy-sel-${i}" style="flex:1;font-size:12px;padding:6px 8px"><option value="">Buy for...</option>${pOpts}</select>
+        <button class="btn btn-sm btn-accent" onclick="hostBuyCard(${i})">Buy</button>
+        <button class="btn btn-sm btn-ghost" onclick="hostReplaceSlot(${i})">Replace</button>
+      </div>
+    `;
+    slots.appendChild(div);
+  });
+}
+
+window.hostBuyCard = async i => {
+  const sel = document.getElementById(`buy-sel-${i}`);
+  if(!sel?.value) return;
+  const pid = sel.value;
+  const market = [...(G.gameState.market||[])];
+  const deck = [...(G.gameState.marketDeck||[])];
+  const cid = market[i]; const c = cardById(cid); if(!c) return;
+  market[i] = deck.pop()||null;
+  const updates = {[`rooms/${G.roomCode}/market`]:market,[`rooms/${G.roomCode}/marketDeck`]:deck};
+  if(c.type==='keep'){
+    const existing = G.gameState.players?.[pid]?.cards||[];
+    updates[`rooms/${G.roomCode}/players/${pid}/cards`]=[...existing,cid];
+  }
+  await update(ref(db),updates);
+};
+
+window.hostReplaceSlot = async i => {
+  const market=[...(G.gameState.market||[])];const deck=[...(G.gameState.marketDeck||[])];
+  market[i]=deck.pop()||null;
+  await update(ref(db),{[`rooms/${G.roomCode}/market`]:market,[`rooms/${G.roomCode}/marketDeck`]:deck});
+};
+
+window.sweepMarket = async () => {
+  const deck=[...(G.gameState.marketDeck||[])];
+  const market=[deck.pop()||null,deck.pop()||null,deck.pop()||null];
+  await update(ref(db),{[`rooms/${G.roomCode}/market`]:market,[`rooms/${G.roomCode}/marketDeck`]:deck});
+};
+
+// ─── EVOLUTION ───
+function renderHostEvol(){
+  const sec = document.getElementById('host-evol-section');
+  if(!sec) return;
+  const isEvol = (G.gameState?.edition||G.edition)==='powerup';
+  sec.classList.toggle('hidden',!isEvol);
+  if(!isEvol) return;
+  const sel = document.getElementById('evol-draw-target');
+  sel.innerHTML = Object.values(G.gameState?.players||{}).filter(p=>!p.eliminated).map(p=>`<option value="${p.id}">${p.icon} ${p.monsterName||p.name}</option>`).join('');
+  const list = document.getElementById('host-evol-list');
+  list.innerHTML = '';
+  Object.values(G.gameState?.players||{}).forEach(p => {
+    const evols = p.evolCards||[]; if(!evols.length) return;
+    const div = document.createElement('div'); div.style.marginBottom='8px';
+    div.innerHTML = `<div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px">${p.icon} ${p.monsterName||p.name}</div>`;
+    evols.forEach((cid,ei) => {
+      const c = cardById(cid); if(!c) return;
+      const row = document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(127,119,221,.1);border-radius:var(--radius);margin-bottom:4px;border:1px solid rgba(127,119,221,.2)';
+      row.innerHTML=`<span class="badge badge-evol">Evol</span><span style="font-size:12px;font-weight:500;flex:1">${c.name}</span><span style="font-size:11px;color:var(--muted)">${c.text}</span><button class="btn btn-sm btn-red" onclick="hostUseEvol('${p.id}',${ei})">Used</button>`;
+      div.appendChild(row);
+    });
+    list.appendChild(div);
+  });
+}
+
+window.drawEvolution = async () => {
+  const pid = document.getElementById('evol-draw-target')?.value; if(!pid) return;
+  const deck=[...(G.gameState?.evolDeck||[])]; if(!deck.length) { alert('Evolution deck empty'); return; }
+  const cid = deck.pop();
+  const existing = G.gameState?.players?.[pid]?.evolCards||[];
+  await update(ref(db),{[`rooms/${G.roomCode}/evolDeck`]:deck,[`rooms/${G.roomCode}/players/${pid}/evolCards`]:[...existing,cid]});
+};
+
+window.hostUseEvol = async (pid,idx) => {
+  const evols=[...(G.gameState?.players?.[pid]?.evolCards||[])];
+  evols.splice(idx,1);
+  await update(ref(db),{[`rooms/${G.roomCode}/players/${pid}/evolCards`]:evols});
+};
+
+// ─── HOST DICE ───
+function renderCtrlDicePlayerSelect(){
+  const sel = document.getElementById('ctrl-dice-player'); if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = Object.values(G.gameState?.players||{}).filter(p=>!p.eliminated)
+    .map(p=>`<option value="${p.id}">${p.icon} ${p.monsterName||p.name}${p.tokyoSlot?' (Tokyo)':''}</option>`).join('');
+  if(cur) sel.value=cur;
+}
+
+window.renderCtrlDiceFaces = function(){
+  const row = document.getElementById('ctrl-dice-row'); if(!row||!G.gameState) return;
+  const dice = G.gameState.dice||[];
+  row.innerHTML='';
+  dice.forEach((d,i) => {
+    const el = document.createElement('div');
+    el.style.cssText=`width:42px;height:42px;border-radius:var(--radius);border:2px solid ${d.locked?'var(--accent)':'var(--border2)'};background:${d.locked?'rgba(232,197,71,.1)':'var(--surface2)'};display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;user-select:none;touch-action:manipulation`;
+    el.textContent = d.face===null?'?':DIE_FACES[d.face];
+    el.onclick = async () => {
+      if((G.gameState?.rollsLeft??3)<3){
+        const nd=[...G.gameState.dice]; nd[i]={...nd[i],locked:!nd[i].locked};
+        await update(ref(db),{[`rooms/${G.roomCode}/dice`]:nd});
+      }
+    };
+    row.appendChild(el);
+  });
+  const lbl=document.getElementById('ctrl-roll-lbl');
+  if(lbl) lbl.textContent='Roll '+(4-(G.gameState?.rollsLeft??3))+' of 3';
+};
+
+window.hostRoll = async () => {
+  const gs=G.gameState; if(!gs||gs.rollsLeft<=0) return;
+  const newDice=(gs.dice||[]).map(d=>d.locked?d:{face:Math.floor(Math.random()*6),locked:false});
+  const sel=document.getElementById('ctrl-dice-player');
+  const pid=sel?.value;
+  const p=pid?gs.players?.[pid]:null;
+  await update(ref(db),{
+    [`rooms/${G.roomCode}/dice`]:newDice,
+    [`rooms/${G.roomCode}/rollsLeft`]:(gs.rollsLeft||3)-1,
+    [`rooms/${G.roomCode}/activeRollerName`]:p?p.monsterName||p.name:'',
+    [`rooms/${G.roomCode}/activeRollerId`]:pid||'',
+  });
+  showRollResult(newDice,p,'ctrl-roll-result');
+};
+
+window.hostResetDice = async () => {
+  await update(ref(db),{
+    [`rooms/${G.roomCode}/dice`]:Array(6).fill(null).map(()=>({face:null,locked:false})),
+    [`rooms/${G.roomCode}/rollsLeft`]:3,
+    [`rooms/${G.roomCode}/activeRollerName`]:'',
+    [`rooms/${G.roomCode}/activeRollerId`]:'',
+  });
+  document.getElementById('ctrl-roll-result').classList.add('hidden');
+};
+
+function showRollResult(dice,p,boxId){
+  const counts={0:0,1:0,2:0,3:0,4:0,5:0};
+  dice.forEach(d=>{if(d.face!==null)counts[d.face]++;});
+  const inTokyo=p&&p.tokyoSlot>0;
+  const lines=[];
+  if(counts[2]>0) lines.push(`<div class="roll-line"><span class="rl-hit">⚔️ ${counts[2]} claws → ${counts[2]} damage to ${inTokyo?'ALL outside Tokyo':'ALL in Tokyo'}</span></div>`);
+  if(counts[1]>0) lines.push(inTokyo?`<div class="roll-line"><span class="rl-dim">❤️ ${counts[1]} hearts → no heal in Tokyo</span></div>`:`<div class="roll-line"><span class="rl-heal">❤️ ${counts[1]} hearts → heal ${counts[1]} HP</span></div>`);
+  if(counts[0]>0) lines.push(`<div class="roll-line"><span class="rl-en">⚡ ${counts[0]} lightning → gain ${counts[0]} Energy</span></div>`);
+  [3,4,5].forEach(f=>{const n=counts[f];const num=f-2;if(n>=3)lines.push(`<div class="roll-line"><span class="rl-vp">${DIE_FACES[f]} ${n}× → gain ${num+(n-3)} VP</span></div>`);else if(n>0)lines.push(`<div class="roll-line"><span class="rl-dim">${DIE_FACES[f]} ${n}× → need ${3-n} more for VP</span></div>`);});
+  const box=document.getElementById(boxId);
+  if(!box) return;
+  if(lines.length){box.classList.remove('hidden');box.innerHTML=lines.join('');}
+  else box.classList.add('hidden');
+}
+
+// ─── CARD DB ───
+let activeFilter='all';
+window.setFilter = btn => {
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('btn-accent'));
+  btn.classList.add('btn-accent');
+  activeFilter=btn.dataset.f;
+  renderCardDB();
+};
+window.renderCardDB = () => {
+  const q=(document.getElementById('ctrl-card-search')?.value||'').toLowerCase();
+  let cards=availableCards();
+  if(activeFilter!=='all') cards=cards.filter(c=>c.type===activeFilter);
+  if(q) cards=cards.filter(c=>c.name.toLowerCase().includes(q)||c.text.toLowerCase().includes(q));
+  const list=document.getElementById('ctrl-card-list');
+  if(!list) return;
+  list.innerHTML='';
+  cards.forEach(c=>{
+    const typeTag=c.type==='keep'?'<span class="badge badge-keep">Keep</span>':c.type==='evol'?'<span class="badge badge-evol">Evol</span>':'<span class="badge badge-discard">Discard</span>';
+    const div=document.createElement('div');div.className='cdi';
+    const owner=Object.values(G.gameState?.players||{}).find(p=>(p.cards||[]).includes(c.id));
+    div.innerHTML=`<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:4px">${typeTag}<span style="font-weight:600;font-size:13px">${c.name}</span>${c.cost>0?`<span style="font-size:12px;color:var(--accent)">⚡${c.cost}</span>`:''}</div><div style="font-size:12px;color:var(--muted)">${c.text}</div>${owner?`<div style="font-size:11px;color:var(--teal);margin-top:4px">${owner.icon} ${owner.monsterName||owner.name}</div>`:''}`;
+    list.appendChild(div);
+  });
+};
+
+// ─── PLAYER VIEW ───
+function renderPlayerView(){
+  const gs=G.gameState; if(!gs||!G.myPlayerId) return;
+  const p=gs.players?.[G.myPlayerId]; if(!p) return;
+
+  document.getElementById('ph-name').textContent=p.monsterName||p.name;
+  document.getElementById('ph-icon').textContent=p.icon||'❓';
+  const inTokyo=p.tokyoSlot>0;
+  document.getElementById('ph-status').textContent=`${inTokyo?'In Tokyo':'Outside'} — Round ${gs.round||1}`;
+  document.getElementById('ph-tokyo-bar').classList.toggle('hidden',!inTokyo);
+  document.getElementById('ph-hp-val').textContent=`${p.hp}/${p.maxHp}`;
+  document.getElementById('ph-vp-val').textContent=p.vp;
+  document.getElementById('ph-en-val').textContent=p.energy;
+
+  const ts=gs.tokyoSlots||1;
+  const tctrl=document.getElementById('ph-tokyo-controls');
+  if(ts===1){
+    tctrl.innerHTML=`<button class="btn ${inTokyo?'btn-red':'btn-green'} btn-full" onclick="playerSetTokyo(${inTokyo?0:1})">${inTokyo?'Leave Tokyo':'Enter Tokyo'}</button>`;
+  } else {
+    tctrl.innerHTML=`<div class="row" style="gap:8px">
+      <button class="btn ${p.tokyoSlot===1?'btn-red':'btn-green'} btn-full" onclick="playerSetTokyo(${p.tokyoSlot===1?0:1})">${p.tokyoSlot===1?'Leave T1':'Enter T1'}</button>
+      <button class="btn ${p.tokyoSlot===2?'btn-red':'btn-green'} btn-full" onclick="playerSetTokyo(${p.tokyoSlot===2?0:2})">${p.tokyoSlot===2?'Leave T2':'Enter T2'}</button>
+    </div>`;
+  }
+
+  // dice
+  const dice=gs.dice||[]; const rollsLeft=gs.rollsLeft??3;
+  document.getElementById('ph-rolls-left').textContent=rollsLeft;
+  const grid=document.getElementById('ph-dice-grid');
+  grid.innerHTML='';
+  dice.forEach((d,i)=>{
+    const el=document.createElement('div');
+    el.className='die'+(d.locked?' locked':'')+(d.face===null?' blank':'');
+    el.textContent=d.face===null?'?':DIE_FACES[d.face];
+    el.onclick=async()=>{
+      if(rollsLeft<3){const nd=[...gs.dice];nd[i]={...nd[i],locked:!nd[i].locked};await update(ref(db),{[`rooms/${G.roomCode}/dice`]:nd});}
+    };
+    grid.appendChild(el);
+  });
+  document.getElementById('ph-roll-btn').disabled=rollsLeft<=0;
+
+  // cards
+  const cardList=document.getElementById('ph-cards-list');
+  const myCards=(p.cards||[]).map(cid=>cardById(cid)).filter(Boolean);
+  if(!myCards.length){ cardList.innerHTML='<div style="color:var(--muted);font-size:13px">No keep cards yet.</div>'; }
+  else {
+    cardList.innerHTML='';
+    myCards.forEach((c,i)=>{
+      const div=document.createElement('div');div.className='p-card-item';
+      div.innerHTML=`<div style="flex:1"><div style="font-weight:600;font-size:13px">${c.name}</div><div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4">${c.text}</div></div><button class="remove-card-btn" onclick="playerRemoveCard(${i})">×</button>`;
+      cardList.appendChild(div);
+    });
+  }
+}
+
+window.adjustMyStat = async (stat,delta) => {
+  const p=G.gameState?.players?.[G.myPlayerId]; if(!p) return;
+  let val=Math.max(0,(p[stat]||0)+delta);
+  if(stat==='hp') val=Math.min(p.maxHp||10,val);
+  const updates={[`rooms/${G.roomCode}/players/${G.myPlayerId}/${stat}`]:val};
+  if(stat==='hp'&&val===0) updates[`rooms/${G.roomCode}/players/${G.myPlayerId}/eliminated`]=true;
+  if(stat==='vp'&&val>=20) updates[`rooms/${G.roomCode}/winner`]={name:p.monsterName||p.name,icon:p.icon,reason:'20 Victory Points!'};
+  await update(ref(db),updates);
+};
+
+window.playerSetTokyo = async slot => {
+  const updates={};
+  Object.keys(G.gameState?.players||{}).forEach(id=>{if(G.gameState.players[id].tokyoSlot===slot&&id!==G.myPlayerId)updates[`rooms/${G.roomCode}/players/${id}/tokyoSlot`]=0;});
+  updates[`rooms/${G.roomCode}/players/${G.myPlayerId}/tokyoSlot`]=slot;
+  await update(ref(db),updates);
+};
+
+window.playerRoll = async () => {
+  const gs=G.gameState; if(!gs||gs.rollsLeft<=0) return;
+  const newDice=(gs.dice||[]).map(d=>d.locked?d:{face:Math.floor(Math.random()*6),locked:false});
+  const p=gs.players?.[G.myPlayerId];
+  await update(ref(db),{
+    [`rooms/${G.roomCode}/dice`]:newDice,
+    [`rooms/${G.roomCode}/rollsLeft`]:(gs.rollsLeft||3)-1,
+    [`rooms/${G.roomCode}/activeRollerName`]:p?p.monsterName||p.name:'',
+    [`rooms/${G.roomCode}/activeRollerId`]:G.myPlayerId,
+  });
+  showRollResult(newDice,p,'ph-roll-result');
+};
+
+window.playerResetDice = async () => {
+  await update(ref(db),{
+    [`rooms/${G.roomCode}/dice`]:Array(6).fill(null).map(()=>({face:null,locked:false})),
+    [`rooms/${G.roomCode}/rollsLeft`]:3,
+    [`rooms/${G.roomCode}/activeRollerName`]:'',
+    [`rooms/${G.roomCode}/activeRollerId`]:'',
+  });
+  document.getElementById('ph-roll-result').classList.add('hidden');
+};
+
+window.playerRemoveCard = async idx => {
+  const cards=[...(G.gameState?.players?.[G.myPlayerId]?.cards||[])];
+  cards.splice(idx,1);
+  await update(ref(db),{[`rooms/${G.roomCode}/players/${G.myPlayerId}/cards`]:cards});
+};
+
+// ─── DISPLAY VIEW ───
+function renderDisplay(){
+  const gs=G.gameState; if(!gs) return;
+  document.getElementById('disp-round-num').textContent=gs.round||1;
+  const ts=gs.tokyoSlots||1;
+  const players=Object.values(gs.players||{});
+
+  const tslots=document.getElementById('disp-tokyo-slots');
+  tslots.innerHTML='';
+  for(let s=1;s<=ts;s++){
+    const occ=players.find(p=>p.tokyoSlot===s);
+    const slot=document.createElement('div');
+    slot.className='tokyo-slot'+(occ?' occupied':'');
+    if(occ){
+      const cards=(occ.cards||[]).map(cid=>{const c=cardById(cid);return c?`<span class="dp-chip">${c.name}</span>`:''}).join('');
+      slot.innerHTML=`<div><div style="font-size:44px;margin-bottom:4px">${occ.icon}</div><div style="font-family:var(--font-display);font-size:22px;color:#fff;letter-spacing:1px">${occ.monsterName||occ.name}</div><div class="dp-stats" style="justify-content:center;margin-top:6px"><span class="dp-stat hp">❤️ ${occ.hp}</span><span class="dp-stat vp">★ ${occ.vp}</span><span class="dp-stat en">⚡ ${occ.energy}</span></div>${cards?`<div class="dp-chips" style="justify-content:center;margin-top:6px">${cards}</div>`:''}</div>`;
+    } else {
+      slot.innerHTML=`<div style="color:rgba(29,158,117,.35);font-size:13px">${ts>1?'Tokyo '+s+' —':''} Empty</div>`;
+    }
+    tslots.appendChild(slot);
+  }
+
+  const pg=document.getElementById('disp-players-grid');
+  pg.innerHTML='';
+  players.filter(p=>!p.tokyoSlot).forEach(p=>{
+    const div=document.createElement('div');
+    div.className='dp-card'+(p.eliminated?' eliminated':'');
+    const cards=(p.cards||[]).map(cid=>{const c=cardById(cid);return c?`<span class="dp-chip">${c.name}</span>`:''}).join('');
+    div.innerHTML=`<div class="dp-icon">${p.icon||'❓'}</div><div class="dp-name">${p.monsterName||p.name}</div><div class="dp-stats"><span class="dp-stat hp">❤️ ${p.hp}</span><span class="dp-stat vp">★ ${p.vp}</span><span class="dp-stat en">⚡ ${p.energy}</span></div>${cards?`<div class="dp-chips">${cards}</div>`:''}`;
+    pg.appendChild(div);
+  });
+
+  const dice=gs.dice||[]; const anyRolled=dice.some(d=>d.face!==null);
+  const dSec=document.getElementById('disp-dice-section');
+  if(anyRolled&&gs.activeRollerName){
+    dSec.classList.remove('hidden');
+    document.getElementById('disp-dice-who').textContent=gs.activeRollerName;
+    const drow=document.getElementById('disp-dice-row');
+    drow.innerHTML='';
+    dice.forEach(d=>{const el=document.createElement('div');el.className='disp-die'+(d.locked?' locked':'');el.textContent=d.face===null?'':DIE_FACES[d.face];drow.appendChild(el);});
+    const counts={0:0,1:0,2:0,3:0,4:0,5:0};
+    dice.forEach(d=>{if(d.face!==null)counts[d.face]++;});
+    const roller=gs.activeRollerId?gs.players?.[gs.activeRollerId]:null;
+    const inTokyo=roller&&roller.tokyoSlot>0;
+    const parts=[];
+    if(counts[2]>0) parts.push(`<span style="background:rgba(240,149,149,.15);color:#f09595">⚔️ ${counts[2]} → deal ${counts[2]} dmg to ${inTokyo?'ALL outside':'ALL in Tokyo'}</span>`);
+    if(counts[1]>0) parts.push(inTokyo?`<span style="background:rgba(255,255,255,.05);color:var(--muted)">❤️ no heal</span>`:`<span style="background:rgba(29,158,117,.12);color:var(--teal)">❤️ heal ${counts[1]}</span>`);
+    if(counts[0]>0) parts.push(`<span style="background:rgba(232,197,71,.12);color:var(--accent)">⚡ +${counts[0]} energy</span>`);
+    [3,4,5].forEach(f=>{const n=counts[f];const num=f-2;if(n>=3)parts.push(`<span style="background:rgba(127,119,221,.12);color:var(--purple)">${DIE_FACES[f]} +${num+(n-3)} VP</span>`);else if(n>0)parts.push(`<span style="background:rgba(255,255,255,.05);color:var(--muted)">${DIE_FACES[f]} need ${3-n} more</span>`);});
+    document.getElementById('disp-dice-result').innerHTML=parts.join('');
+  } else dSec.classList.add('hidden');
+
+  const sc=document.getElementById('disp-store-cards');
+  sc.innerHTML='';
+  (gs.market||[]).filter(Boolean).forEach(cid=>{
+    const c=cardById(cid); if(!c) return;
+    const typeTag=c.type==='keep'?'<span class="badge badge-keep" style="font-size:10px">Keep</span>':'<span class="badge badge-discard" style="font-size:10px">Discard</span>';
+    const el=document.createElement('div');el.className='dsc';
+    el.innerHTML=`<div class="row" style="gap:6px;margin-bottom:2px">${typeTag}<span class="dsc-name">${c.name}</span></div><div class="dsc-cost">⚡${c.cost}</div><div class="dsc-text">${c.text}</div>`;
+    sc.appendChild(el);
+  });
+  if(gs.winner) showWinner(gs.winner);
+}
+
+// ─── WIN ───
+let winShown=false;
+function showWinner(w){
+  if(winShown) return; winShown=true;
+  document.getElementById('win-icon').textContent=w.icon||'🏆';
+  document.getElementById('win-name').textContent=w.name;
+  document.getElementById('win-reason').textContent=w.reason||'';
+  document.getElementById('win-overlay').classList.remove('hidden');
+}
+
+// ─── TABS ───
+window.switchTab = (btn,panelId) => {
+  const bar=btn.closest('.tab-bar');
+  bar.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  const content=bar.nextElementSibling;
+  if(content) content.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  const target=document.getElementById(panelId);
+  if(target) target.classList.add('active');
+};
+
+// ─── FULLSCREEN ───
+window.toggleFullscreen = () => {
+  if(!document.fullscreenElement) document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
+};
+
+// ─── INIT ───
+document.getElementById('join-code-input').addEventListener('input',e=>{ e.target.value=e.target.value.toUpperCase(); });
+showScreen('screen-lobby');
+document.getElementById('screen-loading').classList.remove('active');
+</script>
+</body>
+</html>
