@@ -204,6 +204,18 @@ select option{background:var(--surface2)}
         </div>
       </div>
     </div>
+
+    <div id="lobby-monster-pick" class="hidden" style="display:flex;flex-direction:column;gap:12px">
+      <div class="lbl" style="text-align:center;margin-bottom:0">Choose your monster</div>
+      <div id="monster-pick-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
+      <div id="monster-pick-error" class="hidden" style="color:var(--red);font-size:12px;text-align:center;padding:4px 0"></div>
+    </div>
+
+    <div id="lobby-waiting-player" class="hidden" style="display:flex;flex-direction:column;gap:16px;align-items:center;padding:20px 0;text-align:center">
+      <div style="font-size:72px" id="my-picked-icon">❓</div>
+      <div style="font-family:var(--font-display);font-size:32px;color:var(--accent);letter-spacing:1px" id="my-picked-name">...</div>
+      <div style="color:var(--muted);font-size:13px">Waiting for host to start the game...</div>
+    </div>
   </div>
 </div>
 
@@ -227,6 +239,16 @@ select option{background:var(--surface2)}
       <div class="row" style="gap:6px;flex-wrap:wrap">
         <button class="btn btn-sm btn-accent tokyo-slots-btn" data-s="1" onclick="setTokyoSlots(1)">1 slot (2–4 players)</button>
         <button class="btn btn-sm tokyo-slots-btn" data-s="2" onclick="setTokyoSlots(2)">2 slots (5–6 players)</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="lbl">Number of players</div>
+      <div class="row" style="gap:6px;flex-wrap:wrap">
+        <button class="btn btn-sm player-count-btn btn-accent" data-c="2" onclick="setPlayerCount(2)">2</button>
+        <button class="btn btn-sm player-count-btn" data-c="3" onclick="setPlayerCount(3)">3</button>
+        <button class="btn btn-sm player-count-btn" data-c="4" onclick="setPlayerCount(4)">4</button>
+        <button class="btn btn-sm player-count-btn" data-c="5" onclick="setPlayerCount(5)">5</button>
+        <button class="btn btn-sm player-count-btn" data-c="6" onclick="setPlayerCount(6)">6</button>
       </div>
     </div>
     <div class="card">
@@ -485,18 +507,6 @@ const CARDS_DB = [
   {id:'c44',name:'Military Might',cost:4,type:'keep',text:'Roll 1 extra die when attacking.',edition:'newyork'},
   {id:'c45',name:'All Systems Go',cost:3,type:'discard',text:'Take another full turn immediately.',edition:'newyork'},
   {id:'c46',name:'Skyscraper',cost:3,type:'discard',text:'Gain 2 VP and 2 Energy.',edition:'newyork'},
-  {id:'e01',name:'Alpha Evolution',cost:0,type:'evol',text:'When entering Tokyo, gain 2 VP.',edition:'powerup'},
-  {id:'e02',name:'Baby Fangs',cost:0,type:'evol',text:'Deal 1 extra damage on first attack each turn.',edition:'powerup'},
-  {id:'e03',name:'Bio-Mastery',cost:0,type:'evol',text:'Gain 2 HP when buying a Keep card.',edition:'powerup'},
-  {id:'e04',name:'Call for Help',cost:0,type:'evol',text:'Once per game: all your attacks deal double damage.',edition:'powerup'},
-  {id:'e05',name:'Deja-vu',cost:0,type:'evol',text:'Once per game: re-roll all dice after final roll.',edition:'powerup'},
-  {id:'e06',name:'Extra Head',cost:0,type:'evol',text:'Roll 1 extra die this turn.',edition:'powerup'},
-  {id:'e07',name:'High Voltage',cost:0,type:'evol',text:'Gain 2 extra Energy this turn.',edition:'powerup'},
-  {id:'e08',name:'Hibernation',cost:0,type:'evol',text:'Skip your next turn to heal to full HP.',edition:'powerup'},
-  {id:'e09',name:'Irradiated',cost:0,type:'evol',text:'All Claws rolled deal +1 damage this turn.',edition:'powerup'},
-  {id:'e10',name:'Metamorph',cost:0,type:'evol',text:'Discard 1 Keep card, gain its cost in Energy.',edition:'powerup'},
-  {id:'e11',name:'Rapid Evolution',cost:0,type:'evol',text:'Draw 2 more Evolution cards.',edition:'powerup'},
-  {id:'e12',name:'Sonar',cost:0,type:'evol',text:'Look at and reorder the top 3 cards of any deck.',edition:'powerup'},
 ];
 
 const DIE_FACES = ['⚡','❤️','⚔️','1️⃣','2️⃣','3️⃣'];
@@ -507,7 +517,7 @@ const cardById = id => CARDS_DB.find(c=>c.id===id);
 
 const G = {
   role: null, roomCode: null, myPlayerId: null, gameState: null,
-  edition: 'base', tokyoSlots: 1, listeners: [], cardFilter: 'all',
+  edition: 'base', tokyoSlots: 1, hostPlayerCount: 2, listeners: [], cardFilter: 'all',
 };
 window.G = G;
 
@@ -522,19 +532,24 @@ window.backToLobby = () => {
   G.listeners.forEach(({r}) => off(r));
   G.listeners = [];
   Object.assign(G, {role:null,roomCode:null,myPlayerId:null,gameState:null});
-  ['lobby-home','lobby-waiting','lobby-join-form'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) { el.style.display = ''; el.classList.remove('hidden'); }
+  ['lobby-waiting','lobby-join-form','lobby-monster-pick','lobby-waiting-player'].forEach(id => {
+    document.getElementById(id)?.classList.add('hidden');
   });
-  document.getElementById('lobby-waiting').classList.add('hidden');
-  document.getElementById('lobby-join-form').classList.add('hidden');
+  document.getElementById('lobby-home').classList.remove('hidden');
   showScreen('screen-lobby');
 };
 
 window.goHostSetup = () => {
-  G.role = 'host'; G.edition = 'base'; G.tokyoSlots = 1;
+  G.role = 'host'; G.edition = 'base'; G.tokyoSlots = 1; G.hostPlayerCount = 2;
+  document.querySelectorAll('.player-count-btn').forEach(b => b.classList.toggle('btn-accent', parseInt(b.dataset.c)===2));
   renderMonsterAssignList();
   showScreen('screen-host-setup');
+};
+
+window.setPlayerCount = n => {
+  G.hostPlayerCount = n;
+  document.querySelectorAll('.player-count-btn').forEach(b => b.classList.toggle('btn-accent', parseInt(b.dataset.c)===n));
+  renderMonsterAssignList();
 };
 
 window.setEdition = e => {
@@ -550,7 +565,7 @@ window.setTokyoSlots = n => {
 function renderMonsterAssignList(){
   const list = document.getElementById('monster-assign-list');
   list.innerHTML = '';
-  MONSTERS.slice(0,6).forEach(m => {
+  MONSTERS.slice(0,G.hostPlayerCount).forEach(m => {
     const row = document.createElement('div');
     row.className = 'monster-name-row';
     row.innerHTML = `<span style="font-size:22px">${m.icon}</span><input type="text" value="${m.name}" data-mid="${m.id}" class="mname-inp" style="flex:1;background:transparent;border:none;font-size:14px;font-weight:500;padding:0" placeholder="${m.name}">`;
@@ -579,7 +594,7 @@ window.openLobbyWaiting = async () => {
   const evolDeck = G.edition==='powerup' ? shuffle(CARDS_DB.filter(c=>c.type==='evol').map(c=>({...c}))) : [];
 
   await set(ref(db, `rooms/${code}`), {
-    round:1, phase:'waiting', edition:G.edition, tokyoSlots:G.tokyoSlots,
+    round:1, phase:'waiting', edition:G.edition, tokyoSlots:G.tokyoSlots, playerCount:G.hostPlayerCount,
     players:{}, monsterNames:names,
     market: market.map(c=>c.id),
     marketDeck: deck.map(c=>c.id),
@@ -605,7 +620,16 @@ function listenRoom(code){
       document.getElementById('start-game-btn').disabled = pc < 1;
       if(G.gameState.phase==='playing') { renderHostCtrl(); renderDisplay(); }
     }
-    if(G.role==='player') renderPlayerView();
+    if(G.role==='player'){
+      if(G.gameState.phase==='playing'){
+        if(!document.getElementById('screen-player').classList.contains('active')) showScreen('screen-player');
+        renderPlayerView();
+      } else {
+        const myP=G.gameState.players?.[G.myPlayerId];
+        if(myP?.monsterId) showPickedWaiting(myP);
+        else renderMonsterPicker();
+      }
+    }
     if(G.role==='display') renderDisplay();
     if(G.gameState.winner) showWinner(G.gameState.winner);
   });
@@ -629,11 +653,19 @@ window.startGame = async () => {
   const players = Object.values(G.gameState?.players||{});
   const monsterNames = G.gameState?.monsterNames||{};
   const updates = {};
+  const takenIds = new Set(players.filter(p=>p.monsterId).map(p=>p.monsterId));
+  let autoIdx = 0;
   players.forEach((p,i) => {
-    const m = MONSTERS[i % MONSTERS.length];
-    updates[`rooms/${G.roomCode}/players/${p.id}/icon`] = m.icon;
-    updates[`rooms/${G.roomCode}/players/${p.id}/monsterId`] = m.id;
-    updates[`rooms/${G.roomCode}/players/${p.id}/monsterName`] = monsterNames[m.id]||m.name;
+    if(!p.monsterId){
+      while(autoIdx<MONSTERS.length && takenIds.has(MONSTERS[autoIdx].id)) autoIdx++;
+      const m = MONSTERS[autoIdx % MONSTERS.length]; autoIdx++;
+      updates[`rooms/${G.roomCode}/players/${p.id}/icon`] = m.icon;
+      updates[`rooms/${G.roomCode}/players/${p.id}/monsterId`] = m.id;
+      updates[`rooms/${G.roomCode}/players/${p.id}/monsterName`] = monsterNames[m.id]||m.name;
+    } else {
+      const custom = monsterNames[p.monsterId];
+      if(custom) updates[`rooms/${G.roomCode}/players/${p.id}/monsterName`] = custom;
+    }
     updates[`rooms/${G.roomCode}/players/${p.id}/hp`] = 10;
     updates[`rooms/${G.roomCode}/players/${p.id}/maxHp`] = 10;
     updates[`rooms/${G.roomCode}/players/${p.id}/vp`] = 0;
@@ -673,8 +705,56 @@ window.confirmJoin = async () => {
     id:pid, name, icon:'❓', hp:10, maxHp:10, vp:0, energy:0,
     tokyoSlot:0, eliminated:false, cards:[], evolCards:[], monsterId:null, monsterName:name
   });
-  showScreen('screen-player');
+  document.getElementById('lobby-join-form').classList.add('hidden');
   listenRoom(G.roomCode);
+  renderMonsterPicker();
+};
+
+function renderMonsterPicker(){
+  const gs=G.gameState;
+  ['lobby-home','lobby-waiting','lobby-join-form','lobby-waiting-player'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));
+  document.getElementById('lobby-monster-pick').classList.remove('hidden');
+  const takenByOthers=new Set(Object.values(gs?.players||{}).filter(p=>p.id!==G.myPlayerId&&p.monsterId).map(p=>p.monsterId));
+  const count=gs?.playerCount||MONSTERS.length;
+  const grid=document.getElementById('monster-pick-grid');
+  if(!grid) return;
+  grid.innerHTML='';
+  MONSTERS.slice(0,count).forEach(m=>{
+    const taken=takenByOthers.has(m.id);
+    const displayName=gs?.monsterNames?.[m.id]||m.name;
+    const btn=document.createElement('button');
+    btn.style.cssText=`padding:12px 6px;border-radius:var(--radius);border:2px solid ${taken?'var(--border)':'var(--border2)'};background:${taken?'rgba(255,255,255,.03)':'var(--surface2)'};cursor:${taken?'not-allowed':'pointer'};opacity:${taken?.4:1};display:flex;flex-direction:column;align-items:center;gap:6px;font-family:var(--font-body);width:100%;touch-action:manipulation;transition:all .15s`;
+    btn.innerHTML=`<span style="font-size:36px">${m.icon}</span><span style="font-size:11px;font-weight:600;color:${taken?'var(--muted)':'var(--text)'};line-height:1.2;text-align:center">${displayName}</span>${taken?'<span style="font-size:10px;color:var(--muted)">Taken</span>':''}`;
+    if(!taken) btn.onclick=()=>pickMonster(m);
+    grid.appendChild(btn);
+  });
+}
+
+function showPickedWaiting(p){
+  ['lobby-home','lobby-waiting','lobby-join-form','lobby-monster-pick'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));
+  const el=document.getElementById('lobby-waiting-player');
+  el.classList.remove('hidden');
+  document.getElementById('my-picked-icon').textContent=p.icon;
+  document.getElementById('my-picked-name').textContent=p.monsterName||p.name;
+}
+
+window.pickMonster=async m=>{
+  const gs=G.gameState;
+  const taken=Object.values(gs?.players||{}).find(p=>p.id!==G.myPlayerId&&p.monsterId===m.id);
+  if(taken){
+    const err=document.getElementById('monster-pick-error');
+    const displayName=gs?.monsterNames?.[m.id]||m.name;
+    err.textContent=`${displayName} was just taken — pick another!`;
+    err.classList.remove('hidden');
+    renderMonsterPicker();
+    return;
+  }
+  const displayName=gs?.monsterNames?.[m.id]||m.name;
+  await update(ref(db),{
+    [`rooms/${G.roomCode}/players/${G.myPlayerId}/monsterId`]:m.id,
+    [`rooms/${G.roomCode}/players/${G.myPlayerId}/icon`]:m.icon,
+    [`rooms/${G.roomCode}/players/${G.myPlayerId}/monsterName`]:displayName,
+  });
 };
 
 // ─── DISPLAY ───
