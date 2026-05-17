@@ -242,16 +242,6 @@ select option{background:var(--surface2)}
       </div>
     </div>
     <div class="card">
-      <div class="lbl">Number of players</div>
-      <div class="row" style="gap:6px;flex-wrap:wrap">
-        <button class="btn btn-sm player-count-btn btn-accent" data-c="2" onclick="setPlayerCount(2)">2</button>
-        <button class="btn btn-sm player-count-btn" data-c="3" onclick="setPlayerCount(3)">3</button>
-        <button class="btn btn-sm player-count-btn" data-c="4" onclick="setPlayerCount(4)">4</button>
-        <button class="btn btn-sm player-count-btn" data-c="5" onclick="setPlayerCount(5)">5</button>
-        <button class="btn btn-sm player-count-btn" data-c="6" onclick="setPlayerCount(6)">6</button>
-      </div>
-    </div>
-    <div class="card">
       <div class="lbl">Monster names (edit if you want custom names)</div>
       <div id="monster-assign-list"></div>
     </div>
@@ -517,7 +507,7 @@ const cardById = id => CARDS_DB.find(c=>c.id===id);
 
 const G = {
   role: null, roomCode: null, myPlayerId: null, gameState: null,
-  edition: 'base', tokyoSlots: 1, hostPlayerCount: 2, listeners: [], cardFilter: 'all',
+  edition: 'base', tokyoSlots: 1, listeners: [], cardFilter: 'all',
 };
 window.G = G;
 
@@ -540,16 +530,9 @@ window.backToLobby = () => {
 };
 
 window.goHostSetup = () => {
-  G.role = 'host'; G.edition = 'base'; G.tokyoSlots = 1; G.hostPlayerCount = 2;
-  document.querySelectorAll('.player-count-btn').forEach(b => b.classList.toggle('btn-accent', parseInt(b.dataset.c)===2));
+  G.role = 'host'; G.edition = 'base'; G.tokyoSlots = 1;
   renderMonsterAssignList();
   showScreen('screen-host-setup');
-};
-
-window.setPlayerCount = n => {
-  G.hostPlayerCount = n;
-  document.querySelectorAll('.player-count-btn').forEach(b => b.classList.toggle('btn-accent', parseInt(b.dataset.c)===n));
-  renderMonsterAssignList();
 };
 
 window.setEdition = e => {
@@ -565,7 +548,7 @@ window.setTokyoSlots = n => {
 function renderMonsterAssignList(){
   const list = document.getElementById('monster-assign-list');
   list.innerHTML = '';
-  MONSTERS.slice(0,G.hostPlayerCount).forEach(m => {
+  MONSTERS.forEach(m => {
     const row = document.createElement('div');
     row.className = 'monster-name-row';
     row.innerHTML = `<span style="font-size:22px">${m.icon}</span><input type="text" value="${m.name}" data-mid="${m.id}" class="mname-inp" style="flex:1;background:transparent;border:none;font-size:14px;font-weight:500;padding:0" placeholder="${m.name}">`;
@@ -594,7 +577,7 @@ window.openLobbyWaiting = async () => {
   const evolDeck = G.edition==='powerup' ? shuffle(CARDS_DB.filter(c=>c.type==='evol').map(c=>({...c}))) : [];
 
   await set(ref(db, `rooms/${code}`), {
-    round:1, phase:'waiting', edition:G.edition, tokyoSlots:G.tokyoSlots, playerCount:G.hostPlayerCount,
+    round:1, phase:'waiting', edition:G.edition, tokyoSlots:G.tokyoSlots,
     players:{}, monsterNames:names,
     market: market.map(c=>c.id),
     marketDeck: deck.map(c=>c.id),
@@ -715,11 +698,10 @@ function renderMonsterPicker(){
   ['lobby-home','lobby-waiting','lobby-join-form','lobby-waiting-player'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));
   document.getElementById('lobby-monster-pick').classList.remove('hidden');
   const takenByOthers=new Set(Object.values(gs?.players||{}).filter(p=>p.id!==G.myPlayerId&&p.monsterId).map(p=>p.monsterId));
-  const count=gs?.playerCount||MONSTERS.length;
   const grid=document.getElementById('monster-pick-grid');
   if(!grid) return;
   grid.innerHTML='';
-  MONSTERS.slice(0,count).forEach(m=>{
+  MONSTERS.forEach(m=>{
     const taken=takenByOthers.has(m.id);
     const displayName=gs?.monsterNames?.[m.id]||m.name;
     const btn=document.createElement('button');
