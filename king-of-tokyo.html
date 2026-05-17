@@ -333,7 +333,13 @@ select option{background:var(--surface2)}
           <div class="stat-controls">
             <button class="stat-btn minus" onclick="adjustMyStat('hp',-1)">−</button>
             <div class="stat-val" id="ph-hp-val" style="color:#f09595">10</div>
-            <button class="stat-btn plus" onclick="adjustMyStat('hp',1)">+</button>
+            <button class="stat-btn plus" id="ph-hp-plus" onclick="adjustMyStat('hp',1)">+</button>
+          </div>
+          <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:6px">
+            <span>max</span>
+            <button onclick="adjustMaxHp(-1)" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:0 2px;line-height:1;font-family:var(--font-body)">−</button>
+            <span id="ph-maxhp" style="color:var(--text);font-weight:600">10</span>
+            <button onclick="adjustMaxHp(1)" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:0 2px;line-height:1;font-family:var(--font-body)">+</button>
           </div>
         </div>
         <div class="stat-card">
@@ -360,26 +366,15 @@ select option{background:var(--surface2)}
     </div>
     <div id="ph-dice" class="panel">
       <div class="card">
-        <div class="lbl">Your dice — <span id="ph-rolls-left">3</span> rolls left this turn</div>
-        <div class="dice-grid" id="ph-dice-grid"></div>
-        <button class="btn btn-accent btn-full" id="ph-roll-btn" onclick="playerRoll()" style="margin-bottom:6px">Roll dice</button>
-        <button class="btn btn-ghost btn-full btn-sm" onclick="playerResetDice()">Reset (new turn)</button>
+        <div class="lbl">Enter your dice — tap the faces you rolled</div>
+        <div id="ph-dice-counters" style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px"></div>
+        <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:10px">Total: <span id="ph-dice-total" style="font-weight:600;color:var(--text)">0</span> dice</div>
+        <button class="btn btn-accent btn-full" onclick="submitDiceResult()" style="margin-bottom:6px">Show result</button>
+        <button class="btn btn-ghost btn-full btn-sm" onclick="resetPlayerDice()">Reset</button>
       </div>
       <div id="ph-roll-result" class="roll-result-box hidden"></div>
-      <div class="card" style="margin-top:10px">
-        <div class="lbl">Die faces</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:12px">
-          <div style="padding:6px;background:var(--surface2);border-radius:var(--radius);text-align:center"><div style="font-size:18px">⚡</div><div style="color:var(--muted);margin-top:2px">Energy +1</div></div>
-          <div style="padding:6px;background:var(--surface2);border-radius:var(--radius);text-align:center"><div style="font-size:18px">❤️</div><div style="color:var(--muted);margin-top:2px">Heal +1 HP</div></div>
-          <div style="padding:6px;background:var(--surface2);border-radius:var(--radius);text-align:center"><div style="font-size:18px">⚔️</div><div style="color:var(--muted);margin-top:2px">Attack ×</div></div>
-          <div style="padding:6px;background:var(--surface2);border-radius:var(--radius);text-align:center"><div style="font-size:18px">1️⃣</div><div style="color:var(--muted);margin-top:2px">VP (3+)</div></div>
-          <div style="padding:6px;background:var(--surface2);border-radius:var(--radius);text-align:center"><div style="font-size:18px">2️⃣</div><div style="color:var(--muted);margin-top:2px">VP (3+)</div></div>
-          <div style="padding:6px;background:var(--surface2);border-radius:var(--radius);text-align:center"><div style="font-size:18px">3️⃣</div><div style="color:var(--muted);margin-top:2px">VP (3+)</div></div>
-        </div>
-      </div>
     </div>
     <div id="ph-mycards" class="panel">
-      <div class="lbl">Your keep cards</div>
       <div id="ph-cards-list"></div>
     </div>
   </div>
@@ -1276,7 +1271,10 @@ function renderPlayerView(){
   const inTokyo=p.tokyoSlot>0;
   document.getElementById('ph-status').textContent=`${inTokyo?'In Tokyo':'Outside'} — Round ${gs.round||1}`;
   document.getElementById('ph-tokyo-bar').classList.toggle('hidden',!inTokyo);
-  document.getElementById('ph-hp-val').textContent=`${p.hp}/${p.maxHp}`;
+  document.getElementById('ph-hp-val').textContent=p.hp;
+  document.getElementById('ph-maxhp').textContent=p.maxHp||10;
+  const hpPlus=document.getElementById('ph-hp-plus');
+  if(hpPlus) hpPlus.disabled=inTokyo;
   document.getElementById('ph-vp-val').textContent=p.vp;
   document.getElementById('ph-en-val').textContent=p.energy;
 
@@ -1291,38 +1289,61 @@ function renderPlayerView(){
     </div>`;
   }
 
-  // dice
-  const dice=gs.dice||[]; const rollsLeft=gs.rollsLeft??3;
-  document.getElementById('ph-rolls-left').textContent=rollsLeft;
-  const grid=document.getElementById('ph-dice-grid');
-  grid.innerHTML='';
-  dice.forEach((d,i)=>{
-    const el=document.createElement('div');
-    el.className='die'+(d.locked?' locked':'')+(d.face===null?' blank':'');
-    el.textContent=d.face===null?'?':DIE_FACES[d.face];
-    el.onclick=async()=>{
-      if(rollsLeft<3){const nd=[...gs.dice];nd[i]={...nd[i],locked:!nd[i].locked};await update(ref(db),{[`rooms/${G.roomCode}/dice`]:nd});}
-    };
-    grid.appendChild(el);
-  });
-  document.getElementById('ph-roll-btn').disabled=rollsLeft<=0;
-
-  // cards
+  // cards tab
   const cardList=document.getElementById('ph-cards-list');
+  cardList.innerHTML='';
+
+  // keep cards
   const myCards=(p.cards||[]).map(cid=>cardById(cid)).filter(Boolean);
-  if(!myCards.length){ cardList.innerHTML='<div style="color:var(--muted);font-size:13px">No keep cards yet.</div>'; }
-  else {
-    cardList.innerHTML='';
+  const keepSec=document.createElement('div');
+  keepSec.innerHTML=`<div class="lbl">Your keep cards</div>`;
+  if(!myCards.length){
+    keepSec.innerHTML+=`<div style="color:var(--muted);font-size:13px;margin-bottom:10px">None yet.</div>`;
+  } else {
     myCards.forEach((c,i)=>{
-      const div=document.createElement('div');div.className='p-card-item';
+      const div=document.createElement('div');div.className='p-card-item';div.style.marginBottom='6px';
       div.innerHTML=`<div style="flex:1"><div style="font-weight:600;font-size:13px">${c.name}</div><div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4">${c.text}</div></div><button class="remove-card-btn" onclick="playerRemoveCard(${i})">×</button>`;
-      cardList.appendChild(div);
+      keepSec.appendChild(div);
     });
+  }
+  cardList.appendChild(keepSec);
+
+  // market
+  const market=(gs.market||[]);
+  const mSec=document.createElement('div');
+  mSec.style.marginTop='14px';
+  mSec.innerHTML=`<div class="lbl">Buy from store</div>`;
+  let anyMarket=false;
+  market.forEach((cid,i)=>{
+    if(!cid) return; anyMarket=true;
+    const c=cardById(cid);if(!c)return;
+    const canAfford=(p.energy||0)>=c.cost;
+    const typeTag=c.type==='keep'?'<span class="badge badge-keep">Keep</span>':'<span class="badge badge-discard">Discard</span>';
+    const div=document.createElement('div');div.className='p-card-item';div.style.marginBottom='6px';
+    div.innerHTML=`<div style="flex:1"><div class="row" style="gap:6px;margin-bottom:3px;flex-wrap:wrap">${typeTag}<span style="font-weight:600;font-size:13px">${c.name}</span><span style="font-size:12px;color:var(--accent)">⚡${c.cost}</span></div><div style="font-size:12px;color:var(--muted);line-height:1.4">${c.text}</div></div><button class="btn btn-sm btn-accent" onclick="playerBuyCard(${i})" ${canAfford?'':'disabled'} style="flex-shrink:0;margin-left:8px">Take</button>`;
+    mSec.appendChild(div);
+  });
+  if(!anyMarket) mSec.innerHTML+=`<div style="color:var(--muted);font-size:13px">Store is empty.</div>`;
+  cardList.appendChild(mSec);
+
+  // evolution cards
+  const evolCards=(p.evolCards||[]).map(cid=>cardById(cid)).filter(Boolean);
+  if(evolCards.length){
+    const eSec=document.createElement('div');eSec.style.marginTop='14px';
+    eSec.innerHTML=`<div class="lbl">Evolution cards (in hand)</div>`;
+    evolCards.forEach((c,i)=>{
+      const div=document.createElement('div');
+      div.style.cssText='display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:rgba(127,119,221,.1);border:1px solid rgba(127,119,221,.2);border-radius:var(--radius);margin-bottom:6px';
+      div.innerHTML=`<div style="flex:1"><div style="font-weight:600;font-size:13px;color:var(--purple)">${c.name}</div><div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4">${c.text}</div></div><button class="btn btn-sm btn-red" onclick="playerUseEvol(${i})" style="flex-shrink:0">Used</button>`;
+      eSec.appendChild(div);
+    });
+    cardList.appendChild(eSec);
   }
 }
 
 window.adjustMyStat = async (stat,delta) => {
   const p=G.gameState?.players?.[G.myPlayerId]; if(!p) return;
+  if(stat==='hp'&&delta>0&&p.tokyoSlot>0) return;
   let val=Math.max(0,(p[stat]||0)+delta);
   if(stat==='hp') val=Math.min(p.maxHp||10,val);
   const updates={[`rooms/${G.roomCode}/players/${G.myPlayerId}/${stat}`]:val};
@@ -1338,27 +1359,98 @@ window.playerSetTokyo = async slot => {
   await update(ref(db),updates);
 };
 
-window.playerRoll = async () => {
-  const gs=G.gameState; if(!gs||gs.rollsLeft<=0) return;
-  const newDice=(gs.dice||[]).map(d=>d.locked?d:{face:Math.floor(Math.random()*6),locked:false});
-  const p=gs.players?.[G.myPlayerId];
-  await update(ref(db),{
-    [`rooms/${G.roomCode}/dice`]:newDice,
-    [`rooms/${G.roomCode}/rollsLeft`]:(gs.rollsLeft||3)-1,
-    [`rooms/${G.roomCode}/activeRollerName`]:p?p.monsterName||p.name:'',
-    [`rooms/${G.roomCode}/activeRollerId`]:G.myPlayerId,
-  });
-  showRollResult(newDice,p,'ph-roll-result');
+const playerDiceCounts={0:0,1:0,2:0,3:0,4:0,5:0};
+
+window.adjustDiceCount=(face,delta)=>{
+  playerDiceCounts[face]=Math.max(0,(playerDiceCounts[face]||0)+delta);
+  const el=document.getElementById(`ph-dc-val-${face}`);
+  if(el) el.textContent=playerDiceCounts[face];
+  const total=Object.values(playerDiceCounts).reduce((a,b)=>a+b,0);
+  const tot=document.getElementById('ph-dice-total');
+  if(tot) tot.textContent=total;
 };
 
-window.playerResetDice = async () => {
+window.submitDiceResult=async()=>{
+  const gs=G.gameState; if(!gs) return;
+  const p=gs.players?.[G.myPlayerId];
+  const dice=[];
+  Object.entries(playerDiceCounts).forEach(([face,count])=>{
+    for(let i=0;i<count;i++) dice.push({face:parseInt(face),locked:false});
+  });
+  if(!dice.length) return;
+  await update(ref(db),{
+    [`rooms/${G.roomCode}/dice`]:dice,
+    [`rooms/${G.roomCode}/activeRollerName`]:p?p.monsterName||p.name:'',
+    [`rooms/${G.roomCode}/activeRollerId`]:G.myPlayerId,
+    [`rooms/${G.roomCode}/rollsLeft`]:0,
+  });
+  showRollResult(dice,p,'ph-roll-result');
+  document.getElementById('ph-roll-result').classList.remove('hidden');
+};
+
+window.resetPlayerDice=async()=>{
+  Object.keys(playerDiceCounts).forEach(k=>{playerDiceCounts[k]=0;});
+  Object.keys(playerDiceCounts).forEach(face=>{
+    const el=document.getElementById(`ph-dc-val-${face}`);if(el)el.textContent='0';
+  });
+  const tot=document.getElementById('ph-dice-total');if(tot)tot.textContent='0';
+  document.getElementById('ph-roll-result').classList.add('hidden');
   await update(ref(db),{
     [`rooms/${G.roomCode}/dice`]:Array(6).fill(null).map(()=>({face:null,locked:false})),
-    [`rooms/${G.roomCode}/rollsLeft`]:3,
     [`rooms/${G.roomCode}/activeRollerName`]:'',
     [`rooms/${G.roomCode}/activeRollerId`]:'',
+    [`rooms/${G.roomCode}/rollsLeft`]:3,
   });
-  document.getElementById('ph-roll-result').classList.add('hidden');
+};
+
+function initDiceUI(){
+  const faces=[
+    {i:0,icon:'⚡',label:'Lightning'},
+    {i:1,icon:'❤️',label:'Heart'},
+    {i:2,icon:'⚔️',label:'Attack (Claw)'},
+    {i:3,icon:'1️⃣',label:'One'},
+    {i:4,icon:'2️⃣',label:'Two'},
+    {i:5,icon:'3️⃣',label:'Three'},
+  ];
+  const container=document.getElementById('ph-dice-counters');
+  if(!container) return;
+  faces.forEach(({i,icon,label})=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius);background:var(--surface2)';
+    row.innerHTML=`<span style="font-size:22px;width:28px;text-align:center;flex-shrink:0">${icon}</span><span style="font-size:13px;color:var(--muted);flex:1">${label}</span><button class="stat-btn minus" style="width:40px;height:40px;font-size:22px;flex-shrink:0" onclick="adjustDiceCount(${i},-1)">−</button><span id="ph-dc-val-${i}" style="font-family:var(--font-display);font-size:32px;min-width:38px;text-align:center;line-height:1">0</span><button class="stat-btn plus" style="width:40px;height:40px;font-size:22px;flex-shrink:0" onclick="adjustDiceCount(${i},1)">+</button>`;
+    container.appendChild(row);
+  });
+}
+
+window.playerBuyCard=async i=>{
+  const gs=G.gameState;const p=gs?.players?.[G.myPlayerId];if(!p)return;
+  const market=[...(gs.market||[])];const deck=[...(gs.marketDeck||[])];
+  const cid=market[i];const c=cardById(cid);if(!c)return;
+  if((p.energy||0)<c.cost)return;
+  market[i]=deck.pop()||null;
+  const updates={
+    [`rooms/${G.roomCode}/market`]:market,
+    [`rooms/${G.roomCode}/marketDeck`]:deck,
+    [`rooms/${G.roomCode}/players/${G.myPlayerId}/energy`]:Math.max(0,(p.energy||0)-c.cost),
+  };
+  if(c.type==='keep'){
+    updates[`rooms/${G.roomCode}/players/${G.myPlayerId}/cards`]=[...(p.cards||[]),cid];
+  }
+  await update(ref(db),updates);
+};
+
+window.playerUseEvol=async idx=>{
+  const evols=[...(G.gameState?.players?.[G.myPlayerId]?.evolCards||[])];
+  evols.splice(idx,1);
+  await update(ref(db),{[`rooms/${G.roomCode}/players/${G.myPlayerId}/evolCards`]:evols});
+};
+
+window.adjustMaxHp=async delta=>{
+  const p=G.gameState?.players?.[G.myPlayerId];if(!p)return;
+  const newMax=Math.max(10,Math.min(12,(p.maxHp||10)+delta));
+  const updates={[`rooms/${G.roomCode}/players/${G.myPlayerId}/maxHp`]:newMax};
+  if((p.hp||10)>newMax) updates[`rooms/${G.roomCode}/players/${G.myPlayerId}/hp`]=newMax;
+  await update(ref(db),updates);
 };
 
 window.playerRemoveCard = async idx => {
@@ -1460,6 +1552,7 @@ window.toggleFullscreen = () => {
 
 // ─── INIT ───
 document.getElementById('join-code-input').addEventListener('input',e=>{ e.target.value=e.target.value.toUpperCase(); });
+initDiceUI();
 showScreen('screen-lobby');
 document.getElementById('screen-loading').classList.remove('active');
 </script>
