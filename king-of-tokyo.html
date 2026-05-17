@@ -387,7 +387,7 @@ select option{background:var(--surface2)}
 
 <div id="screen-host-ctrl" class="screen">
   <div class="host-header">
-    <button class="btn btn-sm btn-ghost" onclick="showScreen('screen-host-dashboard');renderHostDashboard()">← Dashboard</button>
+    <button class="btn btn-sm btn-ghost" onclick="goDashboard()">← Dashboard</button>
     <div class="host-title">CONTROLS</div>
     <div style="font-size:12px;color:var(--muted)">Rd <span id="ctrl-round">1</span></div>
     <div class="spacer"></div>
@@ -448,7 +448,7 @@ select option{background:var(--surface2)}
 
 <div id="screen-host-dashboard" class="screen">
   <div class="dash-header">
-    <button class="btn btn-sm btn-ghost" onclick="showScreen('screen-host-ctrl');renderHostCtrl()">← Controls</button>
+    <button class="btn btn-sm btn-ghost" onclick="goControls()">← Controls</button>
     <div style="font-family:var(--font-display);font-size:18px;color:var(--accent);letter-spacing:2px;flex:1;text-align:center">KING OF TOKYO</div>
     <div style="font-size:12px;color:var(--muted);white-space:nowrap">Rd <span id="dash-round">1</span></div>
     <button class="btn btn-sm btn-ghost" onclick="switchToDisplay()" title="TV display">📺</button>
@@ -477,7 +477,7 @@ select option{background:var(--surface2)}
     <div class="disp-title">KING OF TOKYO</div>
     <div class="spacer"></div>
     <div class="disp-round">ROUND <span id="disp-round-num">1</span></div>
-    <button class="btn btn-sm btn-ghost" style="margin-left:12px" onclick="showScreen('screen-host-dashboard');renderHostDashboard()">← Back</button>
+    <button class="btn btn-sm btn-ghost" style="margin-left:12px" onclick="goDashboard()">← Back</button>
   </div>
   <div class="tokyo-zone">
     <div class="tokyo-zone-title">TOKYO</div>
@@ -993,6 +993,8 @@ window.showDisplayMode = () => {
 };
 
 window.switchToDisplay = () => { showScreen('screen-display'); renderDisplay(); };
+window.goDashboard = () => { showScreen('screen-host-dashboard'); renderHostDashboard(); };
+window.goControls = () => { showScreen('screen-host-ctrl'); renderHostCtrl(); };
 
 // ─── HOST CTRL ───
 function renderHostCtrl(){
