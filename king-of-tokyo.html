@@ -153,6 +153,60 @@ select option{background:var(--surface2)}
 .win-reason{font-size:13px;color:var(--muted);margin-top:4px}
 
 .fullscreen-btn{position:fixed;bottom:16px;right:16px;z-index:100;width:40px;height:40px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* DASHBOARD */
+#screen-host-dashboard{padding:0;overflow-y:auto}
+.dash-header{padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:8px}
+.dash-content{padding:12px;display:flex;flex-direction:column;gap:14px;padding-bottom:40px}
+.dash-section-lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.dash-tokyo{background:linear-gradient(180deg,#020b14 0%,#061a28 55%,#0c2238 100%);border:1px solid rgba(29,158,117,.3);border-radius:var(--radius-lg);padding:14px 14px 42px;position:relative;overflow:hidden}
+.dash-tokyo::before{content:'';position:absolute;bottom:14px;left:20%;right:20%;height:32px;background:radial-gradient(ellipse,rgba(255,130,40,.07) 0%,transparent 70%);pointer-events:none}
+.dash-tokyo::after{content:'';position:absolute;bottom:0;left:0;right:0;height:48px;opacity:.9;
+  background-image:
+    linear-gradient(to top,#0c1e33 30px,transparent 30px),
+    linear-gradient(to top,#091827 46px,transparent 46px),
+    linear-gradient(to top,#0d2035 20px,transparent 20px),
+    linear-gradient(to top,#08182a 38px,transparent 38px),
+    linear-gradient(to top,#0b1c30 26px,transparent 26px),
+    linear-gradient(to top,#0a1b2f 48px,transparent 48px),
+    linear-gradient(to top,#0c1f34 16px,transparent 16px),
+    linear-gradient(to top,#091728 34px,transparent 34px);
+  background-size:18px 100%,22px 100%,14px 100%,26px 100%,16px 100%,10px 100%,20px 100%,18px 100%;
+  background-position:0 0,18px 0,40px 0,54px 0,80px 0,96px 0,106px 0,126px 0;
+  background-repeat:repeat-x;pointer-events:none}
+.dash-tokyo-title{font-family:var(--font-display);font-size:11px;color:var(--teal);letter-spacing:4px;margin-bottom:12px;position:relative;z-index:1}
+.dash-tokyo-slots{display:flex;gap:12px;position:relative;z-index:1}
+.dash-tokyo-slot{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:var(--radius);border:1px dashed rgba(29,158,117,.2);min-height:100px;justify-content:center}
+.dash-tokyo-slot.occ{background:rgba(0,0,0,.3);border:1px solid rgba(29,158,117,.4);box-shadow:inset 0 0 28px rgba(29,158,117,.08),0 0 16px rgba(29,158,117,.06)}
+.dash-tokyo-icon{font-size:56px;filter:drop-shadow(0 0 20px rgba(29,158,117,.85))}
+.dash-tokyo-name{font-family:var(--font-display);font-size:16px;color:#fff;letter-spacing:1px;text-align:center}
+.dash-tokyo-stats{display:flex;gap:5px;flex-wrap:wrap;justify-content:center}
+.dash-players{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.dash-pcard{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:10px}
+.dash-pcard.elim{opacity:.25}
+.dash-pcard-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.dash-pcard-icon{font-size:28px;line-height:1}
+.dash-pcard-name{font-family:var(--font-display);font-size:14px;letter-spacing:.5px;color:#fff}
+.dash-hp-wrap{background:rgba(255,255,255,.08);border-radius:4px;height:7px;overflow:hidden;margin-bottom:6px}
+.dash-hp-bar{height:100%;border-radius:4px;transition:width .4s}
+.dash-stat-row{display:flex;gap:5px;margin-bottom:7px;flex-wrap:wrap}
+.dash-stat-pill{font-size:11px;font-weight:600;padding:2px 7px;border-radius:9999px;background:var(--surface2)}
+.dash-stat-pill.hp{color:#f09595}.dash-stat-pill.vp{color:var(--purple)}.dash-stat-pill.en{color:var(--accent)}
+.dash-cards-row{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.dash-keep-chip{font-size:10px;background:rgba(29,158,117,.1);color:var(--teal);border:1px solid rgba(29,158,117,.2);padding:2px 6px;border-radius:9999px;white-space:nowrap}
+.dash-evol-face{width:22px;height:32px;background:linear-gradient(150deg,#241c3e,#18122e);border:1px solid rgba(127,119,221,.3);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(127,119,221,.4);flex-shrink:0}
+.dash-market{display:flex;flex-direction:column;gap:8px}
+.dash-card-slot{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:12px}
+.dash-card-row{display:flex;align-items:flex-start;gap:10px}
+.dash-card-body{flex:1;min-width:0}
+.dash-card-name{font-size:14px;font-weight:600;color:#fff;margin-bottom:3px}
+.dash-card-meta{display:flex;gap:6px;align-items:center;margin-bottom:5px}
+.dash-card-text{font-size:12px;color:var(--muted);line-height:1.5}
+.dash-card-cost{font-size:13px;font-weight:700;color:var(--accent)}
+.dash-search-box{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.dash-search-results{margin-top:6px;display:flex;flex-direction:column;gap:3px;max-height:180px;overflow-y:auto}
+.dash-result-item{padding:8px 10px;background:var(--surface2);border-radius:var(--radius);cursor:pointer;display:flex;align-items:flex-start;gap:8px;touch-action:manipulation;border:1px solid transparent}
+.dash-result-item:active{background:var(--surface3);border-color:var(--border2)}
 </style>
 </head>
 <body>
@@ -333,11 +387,11 @@ select option{background:var(--surface2)}
 
 <div id="screen-host-ctrl" class="screen">
   <div class="host-header">
-    <div class="host-title">KOT CONTROL</div>
-    <div style="font-size:12px;color:var(--muted)">Round <span id="ctrl-round">1</span></div>
+    <button class="btn btn-sm btn-ghost" onclick="showScreen('screen-host-dashboard');renderHostDashboard()">← Dashboard</button>
+    <div class="host-title">CONTROLS</div>
+    <div style="font-size:12px;color:var(--muted)">Rd <span id="ctrl-round">1</span></div>
     <div class="spacer"></div>
     <button class="btn btn-sm btn-ghost" onclick="hostEndRound()">+Round</button>
-    <button class="btn btn-sm btn-accent" onclick="switchToDisplay()">Display →</button>
   </div>
   <div class="host-content">
     <div class="tab-bar" style="margin-bottom:12px">
@@ -388,6 +442,32 @@ select option{background:var(--surface2)}
         <button class="btn btn-sm filter-btn" data-f="evol" onclick="setFilter(this)">Evolution</button>
       </div>
       <div id="ctrl-card-list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-host-dashboard" class="screen">
+  <div class="dash-header">
+    <button class="btn btn-sm btn-ghost" onclick="showScreen('screen-host-ctrl');renderHostCtrl()">← Controls</button>
+    <div style="font-family:var(--font-display);font-size:18px;color:var(--accent);letter-spacing:2px;flex:1;text-align:center">KING OF TOKYO</div>
+    <div style="font-size:12px;color:var(--muted);white-space:nowrap">Rd <span id="dash-round">1</span></div>
+    <button class="btn btn-sm btn-ghost" onclick="switchToDisplay()" title="TV display">📺</button>
+  </div>
+  <div class="dash-content">
+    <div>
+      <div class="dash-section-lbl">Tokyo Bay</div>
+      <div class="dash-tokyo">
+        <div class="dash-tokyo-title">TOKYO</div>
+        <div class="dash-tokyo-slots" id="dash-tokyo-slots"></div>
+      </div>
+    </div>
+    <div>
+      <div class="dash-section-lbl">Outside Tokyo</div>
+      <div class="dash-players" id="dash-players-grid"></div>
+    </div>
+    <div>
+      <div class="dash-section-lbl">Card Store — tap Replace to set from physical deck</div>
+      <div class="dash-market" id="dash-market-slots"></div>
     </div>
   </div>
 </div>
@@ -601,7 +681,12 @@ function listenRoom(code){
       renderLobbyPlayerList();
       const pc = Object.keys(G.gameState.players||{}).length;
       document.getElementById('start-game-btn').disabled = pc < 1;
-      if(G.gameState.phase==='playing') { renderHostCtrl(); renderDisplay(); }
+      if(G.gameState.phase==='playing'){
+        const aid=document.querySelector('.screen.active')?.id;
+        if(aid==='screen-host-dashboard') renderHostDashboard();
+        else if(aid==='screen-host-ctrl') renderHostCtrl();
+        if(aid==='screen-display') renderDisplay();
+      }
     }
     if(G.role==='player'){
       if(G.gameState.phase==='playing'){
@@ -660,8 +745,8 @@ window.startGame = async () => {
   });
   updates[`rooms/${G.roomCode}/phase`] = 'playing';
   await update(ref(db), updates);
-  showScreen('screen-host-ctrl');
-  renderHostCtrl();
+  showScreen('screen-host-dashboard');
+  renderHostDashboard();
 };
 
 // ─── JOIN ───
@@ -737,6 +822,158 @@ window.pickMonster=async m=>{
     [`rooms/${G.roomCode}/players/${G.myPlayerId}/icon`]:m.icon,
     [`rooms/${G.roomCode}/players/${G.myPlayerId}/monsterName`]:displayName,
   });
+};
+
+// ─── HOST DASHBOARD ───
+function renderHostDashboard(){
+  const gs=G.gameState; if(!gs) return;
+  document.getElementById('dash-round').textContent=gs.round||1;
+  const ts=gs.tokyoSlots||1;
+  const players=Object.values(gs.players||{});
+
+  // Tokyo slots
+  const tSlots=document.getElementById('dash-tokyo-slots');
+  if(tSlots){
+    tSlots.innerHTML='';
+    for(let s=1;s<=ts;s++){
+      const occ=players.find(p=>p.tokyoSlot===s);
+      const div=document.createElement('div');
+      div.className='dash-tokyo-slot'+(occ?' occ':'');
+      if(occ){
+        const pct=Math.min(100,Math.round((occ.hp/(occ.maxHp||10))*100));
+        const bar=pct>60?'#2dce89':pct>30?'#ffd166':'#f5365c';
+        div.innerHTML=`<div class="dash-tokyo-icon">${occ.icon}</div>
+          <div class="dash-tokyo-name">${occ.monsterName||occ.name}</div>
+          <div style="width:100%;max-width:140px"><div class="dash-hp-wrap"><div class="dash-hp-bar" style="width:${pct}%;background:${bar}"></div></div></div>
+          <div class="dash-tokyo-stats">
+            <span class="dash-stat-pill hp">❤️ ${occ.hp}/${occ.maxHp||10}</span>
+            <span class="dash-stat-pill vp">★ ${occ.vp}</span>
+            <span class="dash-stat-pill en">⚡ ${occ.energy}</span>
+          </div>`;
+      } else {
+        div.innerHTML=`<div style="color:rgba(29,158,117,.25);font-size:13px;text-align:center">${ts>1?'Slot '+s+'<br>':''}Empty</div>`;
+      }
+      tSlots.appendChild(div);
+    }
+  }
+
+  // Outside players
+  const pg=document.getElementById('dash-players-grid');
+  if(pg){
+    pg.innerHTML='';
+    players.filter(p=>!p.tokyoSlot).forEach(p=>{
+      const pct=Math.min(100,Math.round((p.hp/(p.maxHp||10))*100));
+      const bar=pct>60?'#2dce89':pct>30?'#ffd166':'#f5365c';
+      const keeps=(p.cards||[]).map(cid=>{const c=cardById(cid);return c?`<span class="dash-keep-chip">${c.name}</span>`:''}).join('');
+      const evols=(p.evolCards||[]).map(()=>'<div class="dash-evol-face">?</div>').join('');
+      const div=document.createElement('div');
+      div.className='dash-pcard'+(p.eliminated?' elim':'');
+      div.innerHTML=`<div class="dash-pcard-top">
+          <div class="dash-pcard-icon">${p.icon||'❓'}</div>
+          <div style="flex:1;min-width:0">
+            <div class="dash-pcard-name">${p.monsterName||p.name}</div>
+            ${p.eliminated?'<div style="font-size:10px;color:var(--red);margin-top:1px">ELIMINATED</div>':''}
+          </div>
+        </div>
+        <div class="dash-hp-wrap"><div class="dash-hp-bar" style="width:${pct}%;background:${bar}"></div></div>
+        <div class="dash-stat-row">
+          <span class="dash-stat-pill hp">❤️ ${p.hp}/${p.maxHp||10}</span>
+          <span class="dash-stat-pill vp">★ ${p.vp}</span>
+          <span class="dash-stat-pill en">⚡ ${p.energy}</span>
+        </div>
+        ${keeps||evols?`<div class="dash-cards-row">${keeps}${evols}</div>`:''}`;
+      pg.appendChild(div);
+    });
+  }
+
+  // Market — preserve open search state across re-renders
+  const prevSearch=[];
+  for(let i=0;i<3;i++){
+    const box=document.getElementById(`dash-search-${i}`);
+    if(box&&!box.classList.contains('hidden')){
+      const inp=box.querySelector('input');
+      prevSearch.push({i,q:inp?.value||''});
+    }
+  }
+  const ms=document.getElementById('dash-market-slots');
+  if(ms){
+    ms.innerHTML='';
+    for(let i=0;i<3;i++){
+      const cid=(gs.market||[])[i];
+      const c=cid?cardById(cid):null;
+      const typeTag=c?(c.type==='keep'?'<span class="badge badge-keep">Keep</span>':'<span class="badge badge-discard">Discard</span>'):'';
+      const div=document.createElement('div');
+      div.className='dash-card-slot';
+      div.innerHTML=`<div class="dash-card-row">
+          <div class="dash-card-body">
+            ${c?`<div class="dash-card-meta">${typeTag}<span class="dash-card-cost">⚡${c.cost}</span></div>
+              <div class="dash-card-name">${c.name}</div>
+              <div class="dash-card-text">${c.text}</div>`
+            :`<div style="color:var(--muted);font-size:13px">Slot ${i+1} — empty</div>`}
+          </div>
+          <button class="btn btn-sm btn-ghost" onclick="toggleSlotSearch(${i})">Replace</button>
+        </div>
+        <div class="dash-search-box hidden" id="dash-search-${i}">
+          <input type="text" placeholder="Search cards…" oninput="filterSlotSearch(${i},this.value)">
+          <div class="dash-search-results" id="dash-search-results-${i}"></div>
+        </div>`;
+      ms.appendChild(div);
+    }
+    prevSearch.forEach(({i,q})=>{
+      const box=document.getElementById(`dash-search-${i}`);
+      if(box){
+        box.classList.remove('hidden');
+        const inp=box.querySelector('input');
+        if(inp) inp.value=q;
+        filterSlotSearch(i,q);
+      }
+    });
+  }
+}
+
+window.toggleSlotSearch=i=>{
+  const box=document.getElementById(`dash-search-${i}`);
+  if(!box) return;
+  const opening=box.classList.contains('hidden');
+  for(let j=0;j<3;j++) document.getElementById(`dash-search-${j}`)?.classList.add('hidden');
+  if(opening){
+    box.classList.remove('hidden');
+    const inp=box.querySelector('input');
+    inp.value='';
+    filterSlotSearch(i,'');
+    setTimeout(()=>inp.focus(),50);
+  }
+};
+
+window.filterSlotSearch=(idx,q)=>{
+  const res=document.getElementById(`dash-search-results-${idx}`);
+  if(!res) return;
+  const ql=q.toLowerCase();
+  let cards=availableCards().filter(c=>c.type!=='evol');
+  if(ql) cards=cards.filter(c=>c.name.toLowerCase().includes(ql)||c.text.toLowerCase().includes(ql));
+  res.innerHTML='';
+  if(!cards.length){res.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px 0">No cards found</div>';return;}
+  cards.slice(0,15).forEach(c=>{
+    const div=document.createElement('div');
+    div.className='dash-result-item';
+    div.innerHTML=`<div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:#fff">${c.name}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4">${c.text}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:12px;color:var(--accent);font-weight:700">⚡${c.cost}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${c.type==='keep'?'Keep':'Discard'}</div>
+      </div>`;
+    div.onclick=()=>setSlotCard(idx,c.id);
+    res.appendChild(div);
+  });
+};
+
+window.setSlotCard=async(idx,cid)=>{
+  const market=[...(G.gameState?.market||[null,null,null])];
+  while(market.length<3) market.push(null);
+  market[idx]=cid;
+  await update(ref(db),{[`rooms/${G.roomCode}/market`]:market});
 };
 
 // ─── DISPLAY ───
