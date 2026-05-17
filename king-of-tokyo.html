@@ -68,11 +68,14 @@ select option{background:var(--surface2)}
 .panel{display:none}.panel.active{display:block}
 
 /* PLAYER PHONE */
-#screen-player{padding:0;overflow-y:auto}
-.player-header{padding:14px 18px 10px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+#screen-player{padding:0;overflow:hidden;height:100dvh}
+.player-header{padding:12px 18px 10px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
 .ph-name{font-family:var(--font-display);font-size:26px;color:var(--accent);letter-spacing:1px}
 .ph-status{font-size:12px;color:var(--muted);margin-top:2px}
-.player-content{padding:14px;display:flex;flex-direction:column;gap:10px;padding-bottom:32px}
+.player-content{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;padding:10px 14px 0;gap:8px}
+#screen-player .tab-bar{flex-shrink:0}
+#screen-player .tokyo-bar{flex-shrink:0}
+#screen-player .panel.active{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-bottom:10px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
 .stat-label{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:6px}
 .stat-controls{display:flex;align-items:center;gap:10px}
@@ -1538,8 +1541,7 @@ window.switchTab = (btn,panelId) => {
   const bar=btn.closest('.tab-bar');
   bar.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
-  const content=bar.nextElementSibling;
-  if(content) content.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  bar.parentElement.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   const target=document.getElementById(panelId);
   if(target) target.classList.add('active');
 };
