@@ -184,12 +184,14 @@ select option{background:var(--surface2)}
 .dash-tokyo-icon{font-size:56px;filter:drop-shadow(0 0 20px rgba(29,158,117,.85))}
 .dash-tokyo-name{font-family:var(--font-display);font-size:16px;color:#fff;letter-spacing:1px;text-align:center}
 .dash-tokyo-stats{display:flex;gap:5px;flex-wrap:wrap;justify-content:center}
-.dash-players{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
-.dash-pcard{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:10px}
+.dash-players{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.dash-pcard{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:14px;transition:border-color .3s,box-shadow .3s}
 .dash-pcard.elim{opacity:.25}
-.dash-pcard-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.dash-pcard-icon{font-size:28px;line-height:1}
-.dash-pcard-name{font-family:var(--font-display);font-size:14px;letter-spacing:.5px;color:#fff}
+.dash-pcard.in-tokyo{border-color:rgba(245,54,92,.7);background:rgba(245,54,92,.05);animation:tokyoPulse 2.5s ease-in-out infinite}
+@keyframes tokyoPulse{0%,100%{box-shadow:0 0 8px rgba(245,54,92,.35),0 0 18px rgba(245,54,92,.15)}50%{box-shadow:0 0 20px rgba(245,54,92,.7),0 0 38px rgba(245,54,92,.3),0 0 55px rgba(245,54,92,.1)}}
+.dash-pcard-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.dash-pcard-icon{font-size:36px;line-height:1}
+.dash-pcard-name{font-family:var(--font-display);font-size:20px;letter-spacing:.5px;color:#fff}
 .dash-hp-wrap{background:rgba(255,255,255,.08);border-radius:4px;height:7px;overflow:hidden;margin-bottom:6px}
 .dash-hp-bar{height:100%;border-radius:4px;transition:width .4s}
 .dash-stat-row{display:flex;gap:5px;margin-bottom:7px;flex-wrap:wrap}
@@ -199,7 +201,7 @@ select option{background:var(--surface2)}
 .dash-keep-chip{font-size:10px;background:rgba(29,158,117,.1);color:var(--teal);border:1px solid rgba(29,158,117,.2);padding:2px 6px;border-radius:9999px;white-space:nowrap}
 .dash-stat-bar-row{display:flex;align-items:center;gap:7px;margin-bottom:5px}
 .dash-stat-bar-lbl{font-size:14px;width:18px;text-align:center;flex-shrink:0;line-height:1}
-.dash-stat-bar-track{flex:1;height:9px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden}
+.dash-stat-bar-track{flex:1;height:11px;background:rgba(255,255,255,.06);border-radius:6px;overflow:hidden}
 .dash-stat-bar-fill{height:100%;border-radius:5px;transition:width .4s}
 .dash-stat-bar-val{font-size:13px;font-weight:700;min-width:36px;text-align:right;flex-shrink:0;line-height:1;font-family:var(--font-display);letter-spacing:.5px}
 @keyframes goldShimmer{0%{background-position:0% center}100%{background-position:100% center}}
@@ -460,14 +462,7 @@ select option{background:var(--surface2)}
   </div>
   <div class="dash-content">
     <div>
-      <div class="dash-section-lbl">Tokyo Bay</div>
-      <div class="dash-tokyo">
-        <div class="dash-tokyo-title">TOKYO</div>
-        <div class="dash-tokyo-slots" id="dash-tokyo-slots"></div>
-      </div>
-    </div>
-    <div>
-      <div class="dash-section-lbl">Outside Tokyo</div>
+      <div class="dash-section-lbl">Players</div>
       <div class="dash-players" id="dash-players-grid"></div>
     </div>
     <div>
@@ -913,43 +908,28 @@ function renderHostDashboard(){
   const ts=gs.tokyoSlots||1;
   const players=Object.values(gs.players||{});
 
-  // Tokyo slots
-  const tSlots=document.getElementById('dash-tokyo-slots');
-  if(tSlots){
-    tSlots.innerHTML='';
-    for(let s=1;s<=ts;s++){
-      const occ=players.find(p=>p.tokyoSlot===s);
-      const div=document.createElement('div');
-      div.className='dash-tokyo-slot'+(occ?' occ':'');
-      if(occ){
-        div.innerHTML=`<div class="dash-tokyo-icon">${occ.icon}</div>
-          <div class="dash-tokyo-name">${occ.monsterName||occ.name}</div>
-          <div style="width:100%;max-width:160px;margin-top:10px">${buildStatBars(occ,gs)}</div>`;
-      } else {
-        div.innerHTML=`<div style="color:rgba(29,158,117,.25);font-size:13px;text-align:center">${ts>1?'Slot '+s+'<br>':''}Empty</div>`;
-      }
-      tSlots.appendChild(div);
-    }
-  }
-
-  // Outside players
+  // All players — Tokyo gets animated red glow
   const pg=document.getElementById('dash-players-grid');
   if(pg){
     pg.innerHTML='';
-    players.filter(p=>!p.tokyoSlot).forEach(p=>{
+    players.forEach(p=>{
+      const inTokyo=p.tokyoSlot>0;
       const keeps=(p.cards||[]).map(cid=>{const c=cardById(cid);return c?`<span class="dash-keep-chip">${c.name}</span>`:''}).join('');
       const evols=(p.evolCards||[]).map(e=>{const n=typeof e==='object'?e.name:'?';const g=typeof e==='object'&&e.isGift;return `<span style="font-size:10px;background:rgba(127,119,221,.15);color:var(--purple);border:1px solid rgba(127,119,221,.25);padding:2px 6px;border-radius:9999px;white-space:nowrap">${g?'🎁 ':''}${n}</span>`;}).join('');
       const div=document.createElement('div');
-      div.className='dash-pcard'+(p.eliminated?' elim':'');
+      div.className='dash-pcard'+(p.eliminated?' elim':'')+(inTokyo?' in-tokyo':'');
       div.innerHTML=`<div class="dash-pcard-top">
           <div class="dash-pcard-icon">${p.icon||'❓'}</div>
           <div style="flex:1;min-width:0">
-            <div class="dash-pcard-name">${p.monsterName||p.name}</div>
-            ${p.eliminated?'<div style="font-size:10px;color:var(--red);margin-top:1px">ELIMINATED</div>':''}
+            <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+              <div class="dash-pcard-name">${p.monsterName||p.name}</div>
+              ${inTokyo?`<span style="font-size:10px;background:rgba(245,54,92,.2);color:var(--red);border:1px solid rgba(245,54,92,.4);padding:1px 8px;border-radius:9999px;font-weight:700;letter-spacing:.05em">TOKYO${ts>1?' '+p.tokyoSlot:''}</span>`:''}
+            </div>
+            ${p.eliminated?'<div style="font-size:10px;color:var(--red);margin-top:2px">ELIMINATED</div>':''}
           </div>
         </div>
-        <div style="margin-top:6px">${buildStatBars(p,gs)}</div>
-        ${keeps||evols?`<div class="dash-cards-row" style="margin-top:2px">${keeps}${evols}</div>`:''}`;
+        ${buildStatBars(p,gs)}
+        ${keeps||evols?`<div class="dash-cards-row" style="margin-top:6px">${keeps}${evols}</div>`:''}`;
       pg.appendChild(div);
     });
   }
