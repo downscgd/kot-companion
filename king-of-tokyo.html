@@ -210,6 +210,8 @@ select option{background:var(--surface2)}
 .dash-search-results{margin-top:6px;display:flex;flex-direction:column;gap:3px;max-height:180px;overflow-y:auto}
 .dash-result-item{padding:8px 10px;background:var(--surface2);border-radius:var(--radius);cursor:pointer;display:flex;align-items:flex-start;gap:8px;touch-action:manipulation;border:1px solid transparent}
 .dash-result-item:active{background:var(--surface3);border-color:var(--border2)}
+.evol-sug-item{padding:7px 10px;cursor:pointer;border-radius:var(--radius);background:var(--surface2);border:1px solid transparent;font-size:13px;touch-action:manipulation;user-select:none;transition:border-color .1s}
+.evol-sug-item:active{background:var(--surface3);border-color:rgba(127,119,221,.4)}
 </style>
 </head>
 <body>
@@ -411,8 +413,7 @@ select option{background:var(--surface2)}
         <div class="row" style="margin-bottom:8px">
           <div class="lbl" style="margin:0">Evolution cards</div>
           <div class="spacer"></div>
-          <select id="evol-draw-target" style="width:auto;font-size:12px;padding:6px 8px"></select>
-          <button class="btn btn-sm btn-ghost" onclick="drawEvolution()">Draw</button>
+          <span style="font-size:11px;color:var(--muted)">Players draw from their phones</span>
         </div>
         <div id="host-evol-list"></div>
       </div>
@@ -578,6 +579,19 @@ const CARDS_DB = [
   {id:'c46',name:'Skyscraper',cost:3,type:'discard',text:'Gain 2 VP and 2 Energy.',edition:'newyork'},
 ];
 
+const EVOL_SUGGESTIONS = {
+  giga:    ['Domination','Monster\'s Due','Atomic Breath','Scale Armor','Nuclear Blood','Tail Sweep','Healing Factor','Claws of Steel'],
+  kraken:  ['Maritime Supremacy','Tentacle Grab','Ink Cloud','Whirlpool','Deep Dive','Shark Skin','Sea Monster','Tidal Wave'],
+  cyber:   ['Cat Reflexes','Nine Lives','Catnap','Whiskers','Laser Pointer','Scratching Claws','Pounce','Purring'],
+  meka:    ['Mechanic Genius','Armor Plating','Fire Breath','Self-Repair','Rocket Salvo','Steel Wings','Dragon Fury','Cyber Evolution'],
+  kong:    ['Primal Scream','Thick Skull','Massive Punch','Banana Split','Ancient Kong','Jungle Call','Gorilla Grip','Chest Pound'],
+  alien:   ['Alien Metabolism','Mind Control','Wormhole','Parasitic Eggs','Alien Vitality','Hive Mind','Sublimation','Extraterrestrial'],
+  boogey:  ['All in the Groove','Hyper Rhythm','Dance of Doom','Electric Slide','Disco Inferno','Funky Steps','Woogie Fever','Phantom Beat'],
+  rob:     ['System Upgrade','Force Field','Power Core','Circuit Override','Metal Storm','Logic Bomb','Emergency Protocol','Overclock'],
+  penguin: ['Deep Freeze','Tundra Rush','Arctic Blast','Ice Storm','Penguin March','Cold Front','Blizzard','Frost Nova'],
+  rex:     ['Ancient Rage','Primal Fury','Cyber Claws','Roar','Time Warp','Evolved Form','Dino Rampage','Apex Predator'],
+};
+
 const DIE_FACES = ['⚡','❤️','⚔️','1️⃣','2️⃣','3️⃣'];
 
 const shuffle = a => {for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
@@ -589,6 +603,12 @@ const G = {
   edition: 'base', tokyoSlots: 1, listeners: [], cardFilter: 'all',
 };
 window.G = G;
+
+let evolDrawOpen = false;
+let evolDrawName = '';
+let evolDrawText = '';
+let evolDrawIsGift = false;
+let giftingEvolIdx = null;
 
 // ─── SCREENS ───
 function showScreen(id){
@@ -864,7 +884,7 @@ function renderHostDashboard(){
       const pct=Math.min(100,Math.round((p.hp/(p.maxHp||10))*100));
       const bar=pct>60?'#2dce89':pct>30?'#ffd166':'#f5365c';
       const keeps=(p.cards||[]).map(cid=>{const c=cardById(cid);return c?`<span class="dash-keep-chip">${c.name}</span>`:''}).join('');
-      const evols=(p.evolCards||[]).map(()=>'<div class="dash-evol-face">?</div>').join('');
+      const evols=(p.evolCards||[]).map(e=>{const n=typeof e==='object'?e.name:'?';const g=typeof e==='object'&&e.isGift;return `<span style="font-size:10px;background:rgba(127,119,221,.15);color:var(--purple);border:1px solid rgba(127,119,221,.25);padding:2px 6px;border-radius:9999px;white-space:nowrap">${g?'🎁 ':''}${n}</span>`;}).join('');
       const div=document.createElement('div');
       div.className='dash-pcard'+(p.eliminated?' elim':'');
       div.innerHTML=`<div class="dash-pcard-top">
@@ -1137,19 +1157,26 @@ function renderHostEvol(){
   const isEvol = (G.gameState?.edition||G.edition)==='powerup';
   sec.classList.toggle('hidden',!isEvol);
   if(!isEvol) return;
-  const sel = document.getElementById('evol-draw-target');
-  sel.innerHTML = Object.values(G.gameState?.players||{}).filter(p=>!p.eliminated).map(p=>`<option value="${p.id}">${p.icon} ${p.monsterName||p.name}</option>`).join('');
   const list = document.getElementById('host-evol-list');
   list.innerHTML = '';
-  Object.values(G.gameState?.players||{}).forEach(p => {
+  const players = Object.values(G.gameState?.players||{});
+  const anyEvols = players.some(p=>(p.evolCards||[]).length);
+  if(!anyEvols){
+    list.innerHTML='<div style="color:var(--muted);font-size:12px">No evolution cards drawn yet.</div>';
+    return;
+  }
+  players.forEach(p => {
     const evols = p.evolCards||[]; if(!evols.length) return;
     const div = document.createElement('div'); div.style.marginBottom='8px';
     div.innerHTML = `<div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px">${p.icon} ${p.monsterName||p.name}</div>`;
-    evols.forEach((cid,ei) => {
-      const c = cardById(cid); if(!c) return;
+    evols.forEach((ev,ei) => {
+      const isObj=typeof ev==='object'&&ev!==null;
+      const name=isObj?ev.name:(cardById(ev)?.name||String(ev));
+      const text=isObj?(ev.text||''):(cardById(ev)?.text||'');
+      const isGift=isObj&&ev.isGift;
       const row = document.createElement('div');
       row.style.cssText='display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(127,119,221,.1);border-radius:var(--radius);margin-bottom:4px;border:1px solid rgba(127,119,221,.2)';
-      row.innerHTML=`<span class="badge badge-evol">Evol</span><span style="font-size:12px;font-weight:500;flex:1">${c.name}</span><span style="font-size:11px;color:var(--muted)">${c.text}</span><button class="btn btn-sm btn-red" onclick="hostUseEvol('${p.id}',${ei})">Used</button>`;
+      row.innerHTML=`<span class="badge badge-evol">${isGift?'🎁':'Evol'}</span><span style="font-size:12px;font-weight:500;flex:1">${name}</span>${text?`<span style="font-size:11px;color:var(--muted)">${text}</span>`:''}<button class="btn btn-sm btn-red" onclick="hostUseEvol('${p.id}',${ei})">Used</button>`;
       div.appendChild(row);
     });
     list.appendChild(div);
@@ -1329,19 +1356,82 @@ function renderPlayerView(){
   if(!anyMarket) mSec.innerHTML+=`<div style="color:var(--muted);font-size:13px">Store is empty.</div>`;
   cardList.appendChild(mSec);
 
-  // evolution cards
-  const evolCards=(p.evolCards||[]).map(cid=>cardById(cid)).filter(Boolean);
-  if(evolCards.length){
-    const eSec=document.createElement('div');eSec.style.marginTop='14px';
-    eSec.innerHTML=`<div class="lbl">Evolution cards (in hand)</div>`;
-    evolCards.forEach((c,i)=>{
+  // evolution section
+  const isEvolEdition=(gs.edition||G.edition)==='powerup';
+  const eSec=document.createElement('div');
+  eSec.style.marginTop='14px';
+
+  const eHead=document.createElement('div');
+  eHead.style.cssText='display:flex;align-items:center;margin-bottom:8px';
+  eHead.innerHTML=`<div class="lbl" style="margin:0">Evolution cards</div><div style="flex:1"></div>`;
+  if(isEvolEdition){
+    const db=document.createElement('button');
+    db.className='btn btn-sm';
+    db.style.cssText='background:rgba(127,119,221,.15);border-color:rgba(127,119,221,.4);color:var(--purple)';
+    db.textContent=evolDrawOpen?'× Cancel':'+ Draw';
+    db.onclick=()=>toggleEvolDraw();
+    eHead.appendChild(db);
+  }
+  eSec.appendChild(eHead);
+
+  if(evolDrawOpen&&isEvolEdition){
+    const sugs=(EVOL_SUGGESTIONS[p.monsterId]||[]).filter(s=>!evolDrawName||s.toLowerCase().includes(evolDrawName.toLowerCase()));
+    const sugContent=sugs.slice(0,8).map(s=>`<div class="evol-sug-item" onclick="selectEvolSuggestion('${s.replace(/'/g,"\\'")}')">${s}</div>`).join('');
+    const form=document.createElement('div');
+    form.style.cssText='background:rgba(127,119,221,.07);border:1px solid rgba(127,119,221,.25);border-radius:var(--radius);padding:12px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px';
+    form.innerHTML=`<div style="font-size:11px;font-weight:600;color:var(--purple);letter-spacing:.05em">DRAW EVOLUTION CARD</div>
+      <input type="text" id="ph-evol-name-inp" placeholder="Card name…" value="${evolDrawName.replace(/"/g,'&quot;')}" oninput="evolNameInput(this.value)" style="margin:0">
+      <div id="ph-evol-sug-box" style="display:${sugContent?'flex':'none'};flex-direction:column;gap:3px;max-height:120px;overflow-y:auto">${sugContent}</div>
+      <input type="text" id="ph-evol-text-inp" placeholder="Effect text (optional)…" value="${evolDrawText.replace(/"/g,'&quot;')}" oninput="setEvolDrawText(this.value)" style="margin:0">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;user-select:none">
+        <input type="checkbox" id="ph-evol-gift-chk"${evolDrawIsGift?' checked':''} onchange="setEvolDrawGift(this.checked)">
+        Gift card <span style="color:var(--muted);font-size:12px">(can transfer to another player)</span>
+      </label>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm btn-ghost btn-full" onclick="cancelEvolDraw()">Cancel</button>
+        <button class="btn btn-sm btn-accent btn-full" onclick="confirmDrawEvol()">Add to hand</button>
+      </div>`;
+    eSec.appendChild(form);
+  }
+
+  const rawEvols=p.evolCards||[];
+  if(!rawEvols.length){
+    const empty=document.createElement('div');
+    empty.style.cssText='color:var(--muted);font-size:13px';
+    empty.textContent=isEvolEdition?'No evolution cards yet.':'Evolution cards need Power Up! edition.';
+    eSec.appendChild(empty);
+  } else {
+    rawEvols.forEach((ev,i)=>{
+      const isObj=typeof ev==='object'&&ev!==null;
+      const name=isObj?ev.name:(cardById(ev)?.name||'?');
+      const text=isObj?(ev.text||''):(cardById(ev)?.text||'');
+      const isGift=isObj&&ev.isGift;
+      const giftOpen=giftingEvolIdx===i;
+      const others=Object.values(gs.players||{}).filter(op=>op.id!==G.myPlayerId&&!op.eliminated);
       const div=document.createElement('div');
-      div.style.cssText='display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:rgba(127,119,221,.1);border:1px solid rgba(127,119,221,.2);border-radius:var(--radius);margin-bottom:6px';
-      div.innerHTML=`<div style="flex:1"><div style="font-weight:600;font-size:13px;color:var(--purple)">${c.name}</div><div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4">${c.text}</div></div><button class="btn btn-sm btn-red" onclick="playerUseEvol(${i})" style="flex-shrink:0">Used</button>`;
+      div.style.cssText='padding:10px 12px;background:rgba(127,119,221,.1);border:1px solid rgba(127,119,221,.2);border-radius:var(--radius);margin-bottom:6px';
+      let giftSel='';
+      if(giftOpen){
+        const opts=others.map(op=>`<option value="${op.id}">${op.icon} ${op.monsterName||op.name}</option>`).join('');
+        giftSel=others.length
+          ?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(127,119,221,.2);display:flex;flex-direction:column;gap:6px">
+              <div style="font-size:12px;color:var(--muted)">Give to:</div>
+              <select id="ph-gift-target" style="margin:0">${opts}</select>
+              <div style="display:flex;gap:6px"><button class="btn btn-sm btn-ghost btn-full" onclick="cancelGiftEvol()">Cancel</button><button class="btn btn-sm btn-accent btn-full" onclick="confirmGiftEvol(${i})">Give</button></div>
+            </div>`
+          :`<div style="margin-top:6px;font-size:12px;color:var(--muted)">No other players available.</div>`;
+      }
+      div.innerHTML=`<div style="display:flex;align-items:flex-start;gap:8px">
+          <div style="flex:1"><div style="font-weight:600;font-size:13px;color:var(--purple)">${isGift?'🎁 ':''}${name}</div>${text?`<div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4">${text}</div>`:''}</div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+            <button class="btn btn-sm btn-red" onclick="playerUseEvol(${i})">Used</button>
+            ${isGift&&others.length?`<button class="btn btn-sm" style="background:rgba(127,119,221,.15);border-color:rgba(127,119,221,.4);color:var(--purple)" onclick="startGiftEvol(${i})">Give…</button>`:''}
+          </div>
+        </div>${giftSel}`;
       eSec.appendChild(div);
     });
-    cardList.appendChild(eSec);
   }
+  cardList.appendChild(eSec);
 }
 
 window.adjustMyStat = async (stat,delta) => {
@@ -1448,6 +1538,64 @@ window.playerUseEvol=async idx=>{
   await update(ref(db),{[`rooms/${G.roomCode}/players/${G.myPlayerId}/evolCards`]:evols});
 };
 
+window.toggleEvolDraw=()=>{
+  evolDrawOpen=!evolDrawOpen;
+  if(!evolDrawOpen){evolDrawName='';evolDrawText='';evolDrawIsGift=false;}
+  renderPlayerView();
+};
+window.cancelEvolDraw=()=>{
+  evolDrawOpen=false;evolDrawName='';evolDrawText='';evolDrawIsGift=false;
+  renderPlayerView();
+};
+window.evolNameInput=val=>{
+  evolDrawName=val;
+  const box=document.getElementById('ph-evol-sug-box');if(!box)return;
+  const mid=G.gameState?.players?.[G.myPlayerId]?.monsterId;
+  const sugs=(EVOL_SUGGESTIONS[mid]||[]).filter(s=>!val||s.toLowerCase().includes(val.toLowerCase()));
+  if(!sugs.length){box.style.display='none';return;}
+  box.style.display='flex';
+  box.innerHTML=sugs.slice(0,8).map(s=>`<div class="evol-sug-item" onclick="selectEvolSuggestion('${s.replace(/'/g,"\\'")}')">${s}</div>`).join('');
+};
+window.selectEvolSuggestion=name=>{
+  evolDrawName=name;
+  const inp=document.getElementById('ph-evol-name-inp');
+  if(inp){inp.value=name;inp.focus();}
+  const box=document.getElementById('ph-evol-sug-box');
+  if(box) box.style.display='none';
+};
+window.setEvolDrawText=val=>{evolDrawText=val;};
+window.setEvolDrawGift=checked=>{evolDrawIsGift=checked;};
+window.confirmDrawEvol=async()=>{
+  const nameEl=document.getElementById('ph-evol-name-inp');
+  const textEl=document.getElementById('ph-evol-text-inp');
+  const giftEl=document.getElementById('ph-evol-gift-chk');
+  const name=(nameEl?.value||'').trim();
+  if(!name){nameEl?.focus();return;}
+  const text=(textEl?.value||'').trim();
+  const isGift=giftEl?.checked||false;
+  const ev={id:'e_'+Math.random().toString(36).slice(2,8),name,text,isGift};
+  const existing=G.gameState?.players?.[G.myPlayerId]?.evolCards||[];
+  await update(ref(db),{[`rooms/${G.roomCode}/players/${G.myPlayerId}/evolCards`]:[...existing,ev]});
+  evolDrawOpen=false;evolDrawName='';evolDrawText='';evolDrawIsGift=false;
+};
+window.startGiftEvol=idx=>{
+  giftingEvolIdx=giftingEvolIdx===idx?null:idx;
+  renderPlayerView();
+};
+window.cancelGiftEvol=()=>{giftingEvolIdx=null;renderPlayerView();};
+window.confirmGiftEvol=async idx=>{
+  const targetPid=document.getElementById('ph-gift-target')?.value;if(!targetPid)return;
+  const myEvols=[...(G.gameState?.players?.[G.myPlayerId]?.evolCards||[])];
+  const ev=myEvols[idx];if(!ev)return;
+  myEvols.splice(idx,1);
+  const targetEvols=[...(G.gameState?.players?.[targetPid]?.evolCards||[])];
+  giftingEvolIdx=null;
+  await update(ref(db),{
+    [`rooms/${G.roomCode}/players/${G.myPlayerId}/evolCards`]:myEvols,
+    [`rooms/${G.roomCode}/players/${targetPid}/evolCards`]:[...targetEvols,ev],
+  });
+};
+
 window.adjustMaxHp=async delta=>{
   const p=G.gameState?.players?.[G.myPlayerId];if(!p)return;
   const newMax=Math.max(10,Math.min(12,(p.maxHp||10)+delta));
@@ -1477,7 +1625,9 @@ function renderDisplay(){
     slot.className='tokyo-slot'+(occ?' occupied':'');
     if(occ){
       const cards=(occ.cards||[]).map(cid=>{const c=cardById(cid);return c?`<span class="dp-chip">${c.name}</span>`:''}).join('');
-      slot.innerHTML=`<div><div style="font-size:44px;margin-bottom:4px">${occ.icon}</div><div style="font-family:var(--font-display);font-size:22px;color:#fff;letter-spacing:1px">${occ.monsterName||occ.name}</div><div class="dp-stats" style="justify-content:center;margin-top:6px"><span class="dp-stat hp">❤️ ${occ.hp}</span><span class="dp-stat vp">★ ${occ.vp}</span><span class="dp-stat en">⚡ ${occ.energy}</span></div>${cards?`<div class="dp-chips" style="justify-content:center;margin-top:6px">${cards}</div>`:''}</div>`;
+      const evolChips=(occ.evolCards||[]).map(e=>{const n=typeof e==='object'?e.name:'?';const g=typeof e==='object'&&e.isGift;return `<span class="dp-chip" style="background:rgba(127,119,221,.12);color:var(--purple);border-color:rgba(127,119,221,.2)">${g?'🎁 ':''}${n}</span>`;}).join('');
+      const allChips=cards+evolChips;
+      slot.innerHTML=`<div><div style="font-size:44px;margin-bottom:4px">${occ.icon}</div><div style="font-family:var(--font-display);font-size:22px;color:#fff;letter-spacing:1px">${occ.monsterName||occ.name}</div><div class="dp-stats" style="justify-content:center;margin-top:6px"><span class="dp-stat hp">❤️ ${occ.hp}</span><span class="dp-stat vp">★ ${occ.vp}</span><span class="dp-stat en">⚡ ${occ.energy}</span></div>${allChips?`<div class="dp-chips" style="justify-content:center;margin-top:6px">${allChips}</div>`:''}</div>`;
     } else {
       slot.innerHTML=`<div style="color:rgba(29,158,117,.35);font-size:13px">${ts>1?'Tokyo '+s+' —':''} Empty</div>`;
     }
@@ -1490,7 +1640,9 @@ function renderDisplay(){
     const div=document.createElement('div');
     div.className='dp-card'+(p.eliminated?' eliminated':'');
     const cards=(p.cards||[]).map(cid=>{const c=cardById(cid);return c?`<span class="dp-chip">${c.name}</span>`:''}).join('');
-    div.innerHTML=`<div class="dp-icon">${p.icon||'❓'}</div><div class="dp-name">${p.monsterName||p.name}</div><div class="dp-stats"><span class="dp-stat hp">❤️ ${p.hp}</span><span class="dp-stat vp">★ ${p.vp}</span><span class="dp-stat en">⚡ ${p.energy}</span></div>${cards?`<div class="dp-chips">${cards}</div>`:''}`;
+    const evolChips=(p.evolCards||[]).map(e=>{const n=typeof e==='object'?e.name:'?';const g=typeof e==='object'&&e.isGift;return `<span class="dp-chip" style="background:rgba(127,119,221,.12);color:var(--purple);border-color:rgba(127,119,221,.2)">${g?'🎁 ':''}${n}</span>`;}).join('');
+    const allChips=cards+evolChips;
+    div.innerHTML=`<div class="dp-icon">${p.icon||'❓'}</div><div class="dp-name">${p.monsterName||p.name}</div><div class="dp-stats"><span class="dp-stat hp">❤️ ${p.hp}</span><span class="dp-stat vp">★ ${p.vp}</span><span class="dp-stat en">⚡ ${p.energy}</span></div>${allChips?`<div class="dp-chips">${allChips}</div>`:''}`;
     pg.appendChild(div);
   });
 
