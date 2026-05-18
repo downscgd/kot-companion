@@ -197,6 +197,12 @@ select option{background:var(--surface2)}
 .dash-stat-pill.hp{color:#f09595}.dash-stat-pill.vp{color:var(--purple)}.dash-stat-pill.en{color:var(--accent)}
 .dash-cards-row{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
 .dash-keep-chip{font-size:10px;background:rgba(29,158,117,.1);color:var(--teal);border:1px solid rgba(29,158,117,.2);padding:2px 6px;border-radius:9999px;white-space:nowrap}
+.dash-stat-bar-row{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.dash-stat-bar-lbl{font-size:14px;width:18px;text-align:center;flex-shrink:0;line-height:1}
+.dash-stat-bar-track{flex:1;height:9px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden}
+.dash-stat-bar-fill{height:100%;border-radius:5px;transition:width .4s}
+.dash-stat-bar-val{font-size:13px;font-weight:700;min-width:36px;text-align:right;flex-shrink:0;line-height:1;font-family:var(--font-display);letter-spacing:.5px}
+@keyframes goldShimmer{0%{background-position:0% center}100%{background-position:100% center}}
 .dash-evol-face{width:22px;height:32px;background:linear-gradient(150deg,#241c3e,#18122e);border:1px solid rgba(127,119,221,.3);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(127,119,221,.4);flex-shrink:0}
 .dash-market{display:flex;flex-direction:column;gap:8px}
 .dash-card-slot{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:12px}
@@ -844,6 +850,60 @@ window.pickMonster=async m=>{
 };
 
 // ─── HOST DASHBOARD ───
+function buildStatBars(p, gs){
+  // HP bar
+  const hpPct=Math.min(100,Math.round((p.hp/(p.maxHp||10))*100));
+  const hpColor=hpPct>60?'#2dce89':hpPct>30?'#ffd166':'#f5365c';
+
+  // VP bar — deepens blue and glows as it approaches 20
+  const vpPct=Math.min(100,Math.round(((p.vp||0)/20)*100));
+  let vpFill,vpFilter='';
+  if((p.vp||0)>=19){
+    vpFill='#99ccff';
+    vpFilter='filter:drop-shadow(0 0 7px rgba(120,180,255,.95)) drop-shadow(0 0 16px rgba(85,153,255,.65)) drop-shadow(0 0 28px rgba(51,102,238,.35))';
+  } else if((p.vp||0)>=16){
+    vpFill='#5599ff';
+    vpFilter='filter:drop-shadow(0 0 5px rgba(85,153,255,.8)) drop-shadow(0 0 12px rgba(68,136,255,.4))';
+  } else if((p.vp||0)>=12){
+    vpFill='#3377ee';
+    vpFilter='filter:drop-shadow(0 0 3px rgba(51,119,238,.55))';
+  } else if((p.vp||0)>=8){vpFill='#2266cc';}
+  else if((p.vp||0)>=4){vpFill='#1a4499';}
+  else{vpFill='#0d2255';}
+
+  // Energy bar — color based on how many market cards are affordable
+  const en=p.energy||0;
+  const enPct=Math.min(100,Math.round((en/15)*100));
+  const mktCards=(gs.market||[]).map(cid=>cardById(cid)).filter(Boolean);
+  const affordable=mktCards.filter(c=>en>=c.cost).length;
+  let enFill;
+  if(affordable>=3){
+    enFill='background:linear-gradient(90deg,#c9a830 0%,#f5e070 35%,#e8c547 50%,#f5e070 65%,#c9a830 100%);background-size:200% 100%;animation:goldShimmer 2s linear infinite';
+  } else if(affordable===2){
+    enFill='background:linear-gradient(90deg,#7a8a9a,#c0ccd8,#9ab0c0)';
+  } else if(affordable===1){
+    enFill='background:linear-gradient(90deg,#7a4a20,#c07838,#8a5025)';
+  } else {
+    enFill='background:#252535';
+  }
+
+  return `<div class="dash-stat-bar-row">
+      <span class="dash-stat-bar-lbl">❤️</span>
+      <div class="dash-stat-bar-track"><div class="dash-stat-bar-fill" style="width:${hpPct}%;background:${hpColor}"></div></div>
+      <span class="dash-stat-bar-val" style="color:#f09595">${p.hp}<span style="color:var(--muted);font-weight:500;font-size:10px;letter-spacing:0">/${p.maxHp||10}</span></span>
+    </div>
+    <div class="dash-stat-bar-row">
+      <span class="dash-stat-bar-lbl">★</span>
+      <div class="dash-stat-bar-track" style="${vpFilter}"><div class="dash-stat-bar-fill" style="width:${vpPct}%;background:${vpFill}"></div></div>
+      <span class="dash-stat-bar-val" style="color:var(--purple)">${p.vp||0}<span style="color:var(--muted);font-weight:500;font-size:10px;letter-spacing:0">/20</span></span>
+    </div>
+    <div class="dash-stat-bar-row">
+      <span class="dash-stat-bar-lbl">⚡</span>
+      <div class="dash-stat-bar-track"><div class="dash-stat-bar-fill" style="width:${enPct}%;${enFill}"></div></div>
+      <span class="dash-stat-bar-val" style="color:var(--accent)">${en}</span>
+    </div>`;
+}
+
 function renderHostDashboard(){
   const gs=G.gameState; if(!gs) return;
   document.getElementById('dash-round').textContent=gs.round||1;
@@ -859,16 +919,9 @@ function renderHostDashboard(){
       const div=document.createElement('div');
       div.className='dash-tokyo-slot'+(occ?' occ':'');
       if(occ){
-        const pct=Math.min(100,Math.round((occ.hp/(occ.maxHp||10))*100));
-        const bar=pct>60?'#2dce89':pct>30?'#ffd166':'#f5365c';
         div.innerHTML=`<div class="dash-tokyo-icon">${occ.icon}</div>
           <div class="dash-tokyo-name">${occ.monsterName||occ.name}</div>
-          <div style="width:100%;max-width:140px"><div class="dash-hp-wrap"><div class="dash-hp-bar" style="width:${pct}%;background:${bar}"></div></div></div>
-          <div class="dash-tokyo-stats">
-            <span class="dash-stat-pill hp">❤️ ${occ.hp}/${occ.maxHp||10}</span>
-            <span class="dash-stat-pill vp">★ ${occ.vp}</span>
-            <span class="dash-stat-pill en">⚡ ${occ.energy}</span>
-          </div>`;
+          <div style="width:100%;max-width:160px;margin-top:10px">${buildStatBars(occ,gs)}</div>`;
       } else {
         div.innerHTML=`<div style="color:rgba(29,158,117,.25);font-size:13px;text-align:center">${ts>1?'Slot '+s+'<br>':''}Empty</div>`;
       }
@@ -881,8 +934,6 @@ function renderHostDashboard(){
   if(pg){
     pg.innerHTML='';
     players.filter(p=>!p.tokyoSlot).forEach(p=>{
-      const pct=Math.min(100,Math.round((p.hp/(p.maxHp||10))*100));
-      const bar=pct>60?'#2dce89':pct>30?'#ffd166':'#f5365c';
       const keeps=(p.cards||[]).map(cid=>{const c=cardById(cid);return c?`<span class="dash-keep-chip">${c.name}</span>`:''}).join('');
       const evols=(p.evolCards||[]).map(e=>{const n=typeof e==='object'?e.name:'?';const g=typeof e==='object'&&e.isGift;return `<span style="font-size:10px;background:rgba(127,119,221,.15);color:var(--purple);border:1px solid rgba(127,119,221,.25);padding:2px 6px;border-radius:9999px;white-space:nowrap">${g?'🎁 ':''}${n}</span>`;}).join('');
       const div=document.createElement('div');
@@ -894,13 +945,8 @@ function renderHostDashboard(){
             ${p.eliminated?'<div style="font-size:10px;color:var(--red);margin-top:1px">ELIMINATED</div>':''}
           </div>
         </div>
-        <div class="dash-hp-wrap"><div class="dash-hp-bar" style="width:${pct}%;background:${bar}"></div></div>
-        <div class="dash-stat-row">
-          <span class="dash-stat-pill hp">❤️ ${p.hp}/${p.maxHp||10}</span>
-          <span class="dash-stat-pill vp">★ ${p.vp}</span>
-          <span class="dash-stat-pill en">⚡ ${p.energy}</span>
-        </div>
-        ${keeps||evols?`<div class="dash-cards-row">${keeps}${evols}</div>`:''}`;
+        <div style="margin-top:6px">${buildStatBars(p,gs)}</div>
+        ${keeps||evols?`<div class="dash-cards-row" style="margin-top:2px">${keeps}${evols}</div>`:''}`;
       pg.appendChild(div);
     });
   }
