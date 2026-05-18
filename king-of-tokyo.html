@@ -479,11 +479,7 @@ select option{background:var(--surface2)}
     <div class="disp-round">ROUND <span id="disp-round-num">1</span></div>
     <button class="btn btn-sm btn-ghost" style="margin-left:12px" onclick="goDashboard()">← Back</button>
   </div>
-  <div class="tokyo-zone">
-    <div class="tokyo-zone-title">TOKYO</div>
-    <div id="disp-tokyo-slots" class="tokyo-slots"></div>
-  </div>
-  <div id="disp-players-grid" class="dp-grid"></div>
+  <div id="disp-players-grid" class="dash-players"></div>
   <div id="disp-dice-section" class="disp-section hidden">
     <div class="disp-section-title">DICE — <span id="disp-dice-who"></span></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap" id="disp-dice-row"></div>
@@ -1644,32 +1640,26 @@ function renderDisplay(){
   const ts=gs.tokyoSlots||1;
   const players=Object.values(gs.players||{});
 
-  const tslots=document.getElementById('disp-tokyo-slots');
-  tslots.innerHTML='';
-  for(let s=1;s<=ts;s++){
-    const occ=players.find(p=>p.tokyoSlot===s);
-    const slot=document.createElement('div');
-    slot.className='tokyo-slot'+(occ?' occupied':'');
-    if(occ){
-      const cards=(occ.cards||[]).map(cid=>{const c=cardById(cid);return c?`<span class="dp-chip">${c.name}</span>`:''}).join('');
-      const evolChips=(occ.evolCards||[]).map(e=>{const n=typeof e==='object'?e.name:'?';const g=typeof e==='object'&&e.isGift;return `<span class="dp-chip" style="background:rgba(127,119,221,.12);color:var(--purple);border-color:rgba(127,119,221,.2)">${g?'🎁 ':''}${n}</span>`;}).join('');
-      const allChips=cards+evolChips;
-      slot.innerHTML=`<div><div style="font-size:44px;margin-bottom:4px">${occ.icon}</div><div style="font-family:var(--font-display);font-size:22px;color:#fff;letter-spacing:1px">${occ.monsterName||occ.name}</div><div class="dp-stats" style="justify-content:center;margin-top:6px"><span class="dp-stat hp">❤️ ${occ.hp}</span><span class="dp-stat vp">★ ${occ.vp}</span><span class="dp-stat en">⚡ ${occ.energy}</span></div>${allChips?`<div class="dp-chips" style="justify-content:center;margin-top:6px">${allChips}</div>`:''}</div>`;
-    } else {
-      slot.innerHTML=`<div style="color:rgba(29,158,117,.35);font-size:13px">${ts>1?'Tokyo '+s+' —':''} Empty</div>`;
-    }
-    tslots.appendChild(slot);
-  }
-
   const pg=document.getElementById('disp-players-grid');
   pg.innerHTML='';
-  players.filter(p=>!p.tokyoSlot).forEach(p=>{
+  players.forEach(p=>{
+    const inTokyo=p.tokyoSlot>0;
+    const keeps=(p.cards||[]).map(cid=>{const c=cardById(cid);return c?`<span class="dash-keep-chip">${c.name}</span>`:''}).join('');
+    const evols=(p.evolCards||[]).map(e=>{const n=typeof e==='object'?e.name:'?';const g=typeof e==='object'&&e.isGift;return `<span style="font-size:10px;background:rgba(127,119,221,.15);color:var(--purple);border:1px solid rgba(127,119,221,.25);padding:2px 6px;border-radius:9999px;white-space:nowrap">${g?'🎁 ':''}${n}</span>`;}).join('');
     const div=document.createElement('div');
-    div.className='dp-card'+(p.eliminated?' eliminated':'');
-    const cards=(p.cards||[]).map(cid=>{const c=cardById(cid);return c?`<span class="dp-chip">${c.name}</span>`:''}).join('');
-    const evolChips=(p.evolCards||[]).map(e=>{const n=typeof e==='object'?e.name:'?';const g=typeof e==='object'&&e.isGift;return `<span class="dp-chip" style="background:rgba(127,119,221,.12);color:var(--purple);border-color:rgba(127,119,221,.2)">${g?'🎁 ':''}${n}</span>`;}).join('');
-    const allChips=cards+evolChips;
-    div.innerHTML=`<div class="dp-icon">${p.icon||'❓'}</div><div class="dp-name">${p.monsterName||p.name}</div><div class="dp-stats"><span class="dp-stat hp">❤️ ${p.hp}</span><span class="dp-stat vp">★ ${p.vp}</span><span class="dp-stat en">⚡ ${p.energy}</span></div>${allChips?`<div class="dp-chips">${allChips}</div>`:''}`;
+    div.className='dash-pcard'+(p.eliminated?' elim':'')+(inTokyo?' in-tokyo':'');
+    div.innerHTML=`<div class="dash-pcard-top">
+        <div class="dash-pcard-icon">${p.icon||'❓'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+            <div class="dash-pcard-name">${p.monsterName||p.name}</div>
+            ${inTokyo?`<span style="font-size:10px;background:rgba(245,54,92,.2);color:var(--red);border:1px solid rgba(245,54,92,.4);padding:1px 8px;border-radius:9999px;font-weight:700;letter-spacing:.05em">TOKYO${ts>1?' '+p.tokyoSlot:''}</span>`:''}
+          </div>
+          ${p.eliminated?'<div style="font-size:10px;color:var(--red);margin-top:2px">ELIMINATED</div>':''}
+        </div>
+      </div>
+      ${buildStatBars(p,gs)}
+      ${keeps||evols?`<div class="dash-cards-row" style="margin-top:6px">${keeps}${evols}</div>`:''}`;
     pg.appendChild(div);
   });
 
