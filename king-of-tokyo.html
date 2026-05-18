@@ -875,13 +875,16 @@ function buildStatBars(p, gs){
   const en=p.energy||0;
   const enPct=Math.min(100,Math.round((en/15)*100));
   const mktCards=(gs.market||[]).map(cid=>cardById(cid)).filter(Boolean);
-  const affordable=mktCards.filter(c=>en>=c.cost).length;
+  const costs=mktCards.map(c=>c.cost).sort((a,b)=>a-b);
+  const canBuy1=costs.length>0&&en>=costs[0];
+  const canBuy2=costs.length>=2&&en>=costs[0]+costs[1];
+  const canBuy3=costs.length>=3&&en>=costs[0]+costs[1]+costs[2];
   let enFill;
-  if(affordable>=3){
+  if(canBuy3){
     enFill='background:linear-gradient(90deg,#c9a830 0%,#f5e070 35%,#e8c547 50%,#f5e070 65%,#c9a830 100%);background-size:200% 100%;animation:goldShimmer 2s linear infinite';
-  } else if(affordable===2){
+  } else if(canBuy2){
     enFill='background:linear-gradient(90deg,#7a8a9a,#c0ccd8,#9ab0c0)';
-  } else if(affordable===1){
+  } else if(canBuy1){
     enFill='background:linear-gradient(90deg,#7a4a20,#c07838,#8a5025)';
   } else {
     enFill='background:#252535';
