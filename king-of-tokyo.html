@@ -323,7 +323,7 @@ select option{background:var(--surface2)}
       <div style="font-size:24px">🏙️</div>
       <div>
         <div style="font-size:14px;font-weight:600;color:var(--teal)">IN TOKYO</div>
-        <div style="font-size:12px;color:rgba(29,158,117,.7);margin-top:2px">You can't heal — attack hits ALL outside</div>
+        <div style="font-size:12px;color:rgba(29,158,117,.7);margin-top:2px">Your attacks hit ALL monsters outside</div>
       </div>
     </div>
     <div class="tab-bar">
@@ -1303,8 +1303,6 @@ function renderPlayerView(){
   document.getElementById('ph-tokyo-bar').classList.toggle('hidden',!inTokyo);
   document.getElementById('ph-hp-val').textContent=p.hp;
   document.getElementById('ph-maxhp').textContent=p.maxHp||10;
-  const hpPlus=document.getElementById('ph-hp-plus');
-  if(hpPlus) hpPlus.disabled=inTokyo;
   document.getElementById('ph-vp-val').textContent=p.vp;
   document.getElementById('ph-en-val').textContent=p.energy;
 
@@ -1436,7 +1434,7 @@ function renderPlayerView(){
 
 window.adjustMyStat = async (stat,delta) => {
   const p=G.gameState?.players?.[G.myPlayerId]; if(!p) return;
-  if(stat==='hp'&&delta>0&&p.tokyoSlot>0) return;
+
   let val=Math.max(0,(p[stat]||0)+delta);
   if(stat==='hp') val=Math.min(p.maxHp||10,val);
   const updates={[`rooms/${G.roomCode}/players/${G.myPlayerId}/${stat}`]:val};
